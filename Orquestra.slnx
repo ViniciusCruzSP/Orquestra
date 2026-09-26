@@ -1,0 +1,8 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="Orquestra.API/Orquestra.API.csproj" />
+    <Project Path="Orquestra.Application/Orquestra.Application.csproj" />
+    <Project Path="Orquestra.Domain/Orquestra.Domain.csproj" />
+    <Project Path="Orquestra.Infrastructure/Orquestra.Infrastructure.csproj" />
+  </Folder>
+</Solution>
