@@ -4,5 +4,9 @@
     <Project Path="Orquestra.Application/Orquestra.Application.csproj" />
     <Project Path="Orquestra.Domain/Orquestra.Domain.csproj" />
     <Project Path="Orquestra.Infrastructure/Orquestra.Infrastructure.csproj" />
+    <Project Path="Orquestra.Web/orquestra.web.esproj">
+      <Build />
+      <Deploy />
+    </Project>
   </Folder>
 </Solution>
