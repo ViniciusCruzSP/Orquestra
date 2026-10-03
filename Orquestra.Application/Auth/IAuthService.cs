@@ -1,7 +1,19 @@
+using System.Text.Json.Serialization;
+
 namespace Orquestra.Application.Auth;
 
-public record AuthResult(string Token, DateTimeOffset ExpiresAt, string UserId, string Email, string Role, Guid OrganizationId);
-public record CurrentUserResult(string UserId, string Email, string Role, Guid OrganizationId);
+public record AuthResult(
+    [property: JsonPropertyName("token")] string Token,
+    [property: JsonPropertyName("expiraEm")] DateTimeOffset ExpiresAt,
+    [property: JsonPropertyName("usuarioId")] string UserId,
+    [property: JsonPropertyName("email")] string Email,
+    [property: JsonPropertyName("perfil")] string Role,
+    [property: JsonPropertyName("organizacaoId")] Guid OrganizationId);
+public record CurrentUserResult(
+    [property: JsonPropertyName("usuarioId")] string UserId,
+    [property: JsonPropertyName("email")] string Email,
+    [property: JsonPropertyName("perfil")] string Role,
+    [property: JsonPropertyName("organizacaoId")] Guid OrganizationId);
 
 public interface IAuthService
 {

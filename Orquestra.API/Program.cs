@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Text.Json.Serialization;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Mvc;
@@ -8,6 +9,10 @@ using Orquestra.Application.Services;
 using Orquestra.Infrastructure;
 
 var builder = WebApplication.CreateBuilder(args);
+
+var portugueseCulture = CultureInfo.GetCultureInfo("pt-BR");
+CultureInfo.DefaultThreadCurrentCulture = portugueseCulture;
+CultureInfo.DefaultThreadCurrentUICulture = portugueseCulture;
 
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<ICurrentUser, HttpCurrentUser>();
@@ -37,7 +42,20 @@ builder.Services.PostConfigure<JwtBearerOptions>(JwtBearerDefaults.Authenticatio
     };
 });
 
-builder.Services.AddControllers()
+builder.Services.AddControllers(options =>
+    {
+        var messages = options.ModelBindingMessageProvider;
+        messages.SetMissingBindRequiredValueAccessor(field => $"O campo {field} é obrigatório.");
+        messages.SetMissingKeyOrValueAccessor(() => "É necessário informar uma chave ou um valor.");
+        messages.SetValueMustNotBeNullAccessor(field => $"O campo {field} não pode ser nulo.");
+        messages.SetAttemptedValueIsInvalidAccessor((value, field) => $"O valor '{value}' é inválido para o campo {field}.");
+        messages.SetNonPropertyAttemptedValueIsInvalidAccessor(value => $"O valor '{value}' é inválido.");
+        messages.SetUnknownValueIsInvalidAccessor(field => $"O valor informado é inválido para o campo {field}.");
+        messages.SetNonPropertyUnknownValueIsInvalidAccessor(() => "O valor informado é inválido.");
+        messages.SetValueIsInvalidAccessor(value => $"O valor '{value}' é inválido.");
+        messages.SetValueMustBeANumberAccessor(field => $"O campo {field} deve ser um número.");
+        messages.SetNonPropertyValueMustBeANumberAccessor(() => "O valor informado deve ser um número.");
+    })
     .AddJsonOptions(options => options.JsonSerializerOptions.Converters.Add(
         new JsonStringEnumConverter(allowIntegerValues: false)));
 builder.Services.AddProblemDetails();
@@ -60,7 +78,12 @@ builder.Services.AddCors(options => options.AddPolicy("ConfiguredOrigins", polic
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(options =>
 {
-    options.SwaggerDoc("v1", new OpenApiInfo { Title = "Orquestra API", Version = "v1" });
+    options.SwaggerDoc("v1", new OpenApiInfo
+    {
+        Title = "API do Orquestra",
+        Version = "v1",
+        Description = "Serviços para gestão e rastreabilidade de ativos de TI."
+    });
     options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
     {
         Name = "Authorization",

@@ -7,12 +7,13 @@ namespace Orquestra.Api.Controllers;
 
 [ApiController]
 [Authorize]
-[Route("api/offboardings")]
-public sealed class OffboardingsController(IOrquestraService service) : ControllerBase
+[Route("api/desligamentos")]
+public sealed class DesligamentosController(IOrquestraService service) : ControllerBase
 {
     [HttpGet]
-    public async Task<IActionResult> List([FromQuery] int page = 1, [FromQuery] int pageSize = 20,
-        [FromQuery] string? search = null, CancellationToken ct = default)
+    public async Task<IActionResult> List([FromQuery(Name = "pagina")] int page = 1,
+        [FromQuery(Name = "itensPorPagina")] int pageSize = 20,
+        [FromQuery(Name = "busca")] string? search = null, CancellationToken ct = default)
         => Ok(await service.GetOffboardingsAsync(new PageQuery(page, pageSize, search), ct));
 
     [HttpGet("{id:guid}")]
@@ -27,7 +28,7 @@ public sealed class OffboardingsController(IOrquestraService service) : Controll
         return CreatedAtAction(nameof(Get), new { id = result.Id }, result);
     }
 
-    [HttpPost("{id:guid}/complete")]
+    [HttpPost("{id:guid}/concluir")]
     [Authorize(Policy = Policies.ManageCritical)]
     public async Task<IActionResult> Complete(Guid id, CancellationToken ct)
         => Ok(await service.CompleteOffboardingAsync(id, ct));

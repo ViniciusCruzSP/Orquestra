@@ -35,7 +35,7 @@ public sealed class CustodyItem
     public string? ReturnNotes { get; private set; }
     public void Return(string userId, string? notes, DateTimeOffset now)
     {
-        if (ReturnedAt is not null) throw new InvalidOperationException("Custody item has already been returned.");
+        if (ReturnedAt is not null) throw new InvalidOperationException("O item da custódia já foi devolvido.");
         ReturnedAt = now; ReturnedByUserId = userId; ReturnNotes = notes;
     }
 }
@@ -80,7 +80,7 @@ public sealed class OffboardingProcess
     public string? CompletedByUserId { get; private set; }
     public void Complete(string userId, DateTimeOffset now)
     {
-        if (CompletedAt is not null) throw new InvalidOperationException("Offboarding has already been completed.");
+        if (CompletedAt is not null) throw new InvalidOperationException("O desligamento já foi concluído.");
         CompletedAt = now; CompletedByUserId = userId;
     }
 }

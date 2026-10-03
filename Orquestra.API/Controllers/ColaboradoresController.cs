@@ -8,12 +8,14 @@ namespace Orquestra.Api.Controllers;
 
 [ApiController]
 [Authorize]
-[Route("api/employees")]
-public sealed class EmployeesController(IOrquestraService service) : ControllerBase
+[Route("api/colaboradores")]
+public sealed class ColaboradoresController(IOrquestraService service) : ControllerBase
 {
     [HttpGet]
-    public async Task<IActionResult> List([FromQuery] int page = 1, [FromQuery] int pageSize = 20,
-        [FromQuery] string? search = null, [FromQuery] EmployeeStatus? employeeStatus = null,
+    public async Task<IActionResult> List([FromQuery(Name = "pagina")] int page = 1,
+        [FromQuery(Name = "itensPorPagina")] int pageSize = 20,
+        [FromQuery(Name = "busca")] string? search = null,
+        [FromQuery(Name = "situacao")] EmployeeStatus? employeeStatus = null,
         CancellationToken ct = default)
         => Ok(await service.GetEmployeesAsync(new PageQuery(page, pageSize, search, EmployeeStatus: employeeStatus), ct));
 

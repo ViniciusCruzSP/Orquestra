@@ -50,7 +50,7 @@ internal sealed class AuthService(
                 SecurityAlgorithms.HmacSha256));
 
         return new AuthResult(new JwtSecurityTokenHandler().WriteToken(token), expiresAt,
-            user.Id, user.Email!, roles[0], user.OrganizationId);
+            user.Id, user.Email!, DisplayRole(roles[0]), user.OrganizationId);
     }
 
     public async Task<CurrentUserResult?> GetMeAsync(string userId, CancellationToken cancellationToken = default)
@@ -61,6 +61,15 @@ internal sealed class AuthService(
 
         var roles = await users.GetRolesAsync(user);
         if (roles.Count == 0) return null;
-        return new CurrentUserResult(user.Id, user.Email!, roles[0], user.OrganizationId);
+        return new CurrentUserResult(user.Id, user.Email!, DisplayRole(roles[0]), user.OrganizationId);
     }
+
+    private static string DisplayRole(string role) => role switch
+    {
+        "Admin" => "Administrador",
+        "GestorTI" => "Gestor de TI",
+        "OperadorTI" => "Operador de TI",
+        "Auditor" => "Auditor",
+        _ => role
+    };
 }

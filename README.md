@@ -1,54 +1,66 @@
-# Orquestra — backend local
+# Orquestra
 
-O Orquestra é um SaaS B2B para governança de ativos de TI. Este incremento contém somente a API ASP.NET Core, a aplicação, o domínio e a persistência SQL Server. O frontend que já existia no repositório foi preservado, mas não faz parte desta entrega nem do build da solução.
+O Orquestra nasceu de um problema comum nas empresas: depois de algum tempo, ninguém sabe com certeza onde estão todos os notebooks, monitores e celulares, quem ficou responsável por cada item ou por quais manutenções aquele equipamento já passou.
 
-## Estrutura
+A proposta do projeto é reunir esse controle em um só lugar. O sistema registra o inventário de ativos de TI, as entregas e devoluções, as manutenções, os defeitos e os descartes. Também acompanha o desligamento de colaboradores para evitar que um processo seja encerrado enquanto ainda existirem equipamentos pendentes.
 
-Os quatro projetos existentes foram mantidos na raiz do repositório:
+Este repositório reúne a aplicação web em React e a API em ASP.NET Core. Toda a experiência apresentada ao usuário, inclusive os contratos e as mensagens da API, está em português.
 
-| Projeto | Responsabilidade |
+## O que já funciona
+
+A API já possui autenticação com JWT, separação dos dados por organização e controle de acesso por perfil. É possível cadastrar departamentos, colaboradores, categorias e ativos; entregar vários ativos em uma única custódia; registrar devoluções; controlar manutenção, defeito e descarte; acompanhar desligamentos; consultar indicadores e revisar o histórico de auditoria.
+
+O frontend já conta com a identidade visual e a apresentação do Orquestra. As telas operacionais e a integração com a API serão construídas nas próximas etapas do projeto.
+
+## Organização do código
+
+| Projeto | O que fica nele |
 | --- | --- |
-| `Orquestra.Domain` | Entidades, estados e regras de transição, sem dependência de EF ou HTTP |
-| `Orquestra.Application` | DTOs, validação e casos de uso |
-| `Orquestra.Infrastructure` | EF Core, SQL Server, Identity, JWT e migrations |
-| `Orquestra.API` | Rotas HTTP, autorização, CORS, Swagger e tratamento de erros |
+| `orquestra.web` | Interface em React, TypeScript e Vite |
+| `Orquestra.API` | Endpoints, autenticação, autorização, Swagger e tratamento de erros |
+| `Orquestra.Application` | Casos de uso, validações e contratos da aplicação |
+| `Orquestra.Domain` | Entidades, estados e regras de negócio |
+| `Orquestra.Infrastructure` | SQL Server, Entity Framework Core, Identity e geração do JWT |
 
-`Orquestra.slnx` compila esses quatro projetos. As ações de negócio pertencem a uma organização; o identificador dela vem do usuário autenticado, não do corpo das requisições. Consultas por ID e operações de escrita aplicam esse escopo, além dos filtros do EF Core.
+A separação ajuda a manter as regras do Orquestra independentes da interface e do banco de dados. Cada usuário pertence a uma organização, e as consultas usam essa informação para impedir o acesso aos dados de outra empresa.
 
-## Pré-requisitos
+## Antes de começar
+
+Para executar o projeto localmente, você precisa ter:
 
 - .NET SDK 10;
-- SQL Server local ou SQL Server Express LocalDB (no Windows, instância `MSSQLLocalDB`);
-- `dotnet-ef` 10.0.12 para aplicar ou criar migrations manualmente.
+- Node.js 22 ou mais recente;
+- SQL Server LocalDB, SQL Server Express ou outra instância compatível;
+- `dotnet-ef` 10.0.12, caso queira aplicar as migrations manualmente.
 
-Para instalar a ferramenta do EF Core, caso necessário:
+Se a ferramenta do Entity Framework ainda não estiver instalada:
 
 ```powershell
 dotnet tool install --global dotnet-ef --version 10.0.12
 ```
 
-## Configuração local
+## Configuração da API
 
-Execute os comandos abaixo na raiz do repositório. Os valores sensíveis ficam em *user-secrets*, fora do Git. Troque o endereço da conexão se usar outra instância local. O exemplo usa autenticação integrada do Windows e não contém credenciais.
+Os dados sensíveis ficam no *User Secrets* e não são enviados ao Git. Na raiz do repositório, configure a conexão com o banco e os dados usados para assinar o token:
 
 ```powershell
 dotnet user-secrets set --project Orquestra.API "ConnectionStrings:Orquestra" "Server=(localdb)\MSSQLLocalDB;Database=OrquestraDev;Trusted_Connection=True;TrustServerCertificate=True"
 dotnet user-secrets set --project Orquestra.API "Jwt:Issuer" "Orquestra.Local"
 dotnet user-secrets set --project Orquestra.API "Jwt:Audience" "Orquestra.Local"
-$jwtKey = [Convert]::ToBase64String([Security.Cryptography.RandomNumberGenerator]::GetBytes(48))
-dotnet user-secrets set --project Orquestra.API "Jwt:Key" $jwtKey
+$chaveJwt = [Convert]::ToBase64String([Security.Cryptography.RandomNumberGenerator]::GetBytes(48))
+dotnet user-secrets set --project Orquestra.API "Jwt:Key" $chaveJwt
 ```
 
-Para criar a primeira organização e o primeiro administrador no banco vazio, configure também os quatro valores de bootstrap. A senha deve ter ao menos 12 caracteres, incluindo maiúscula, minúscula, número e símbolo. Não a coloque em `appsettings.json` ou em um arquivo versionado.
+Em um banco vazio, o Orquestra precisa criar a primeira organização e o primeiro administrador. Escolha seus próprios dados e use uma senha com pelo menos 12 caracteres, incluindo letra maiúscula, letra minúscula, número e símbolo:
 
 ```powershell
 dotnet user-secrets set --project Orquestra.API "Bootstrap:OrganizationName" "Minha Empresa"
 dotnet user-secrets set --project Orquestra.API "Bootstrap:OrganizationSlug" "minha-empresa"
-dotnet user-secrets set --project Orquestra.API "Bootstrap:AdminEmail" "admin@minha-empresa.example"
-dotnet user-secrets set --project Orquestra.API "Bootstrap:AdminPassword" "<senha-forte-escolhida-localmente>"
+dotnet user-secrets set --project Orquestra.API "Bootstrap:AdminEmail" "admin@minha-empresa.com.br"
+dotnet user-secrets set --project Orquestra.API "Bootstrap:AdminPassword" "<sua-senha-local>"
 ```
 
-Depois de criar o administrador, remova os quatro valores de bootstrap. A inicialização seguinte reconhecerá a organização existente, sem precisar manter a senha localmente:
+Depois do primeiro acesso, a senha de bootstrap não precisa continuar salva:
 
 ```powershell
 dotnet user-secrets remove --project Orquestra.API "Bootstrap:AdminPassword"
@@ -57,17 +69,15 @@ dotnet user-secrets remove --project Orquestra.API "Bootstrap:OrganizationSlug"
 dotnet user-secrets remove --project Orquestra.API "Bootstrap:OrganizationName"
 ```
 
-Para criar outra organização local, informe um novo nome, slug, e-mail de administrador e senha de bootstrap, então reinicie a API. O bootstrap não troca a senha de contas já existentes.
-
-Para configurar uma origem de navegador permitida, defina `Cors:AllowedOrigins:0` com a URL exata. A lista vazia padrão não habilita nenhuma origem cruzada.
+Para permitir que o frontend local acesse a API:
 
 ```powershell
 dotnet user-secrets set --project Orquestra.API "Cors:AllowedOrigins:0" "http://localhost:5173"
 ```
 
-O exemplo de CORS apenas configura uma origem local, quando for necessária. Não há frontend novo neste incremento.
+## Executando o projeto
 
-## Banco e execução
+Restaure as dependências, prepare o banco e inicie a API:
 
 ```powershell
 dotnet restore Orquestra.slnx
@@ -78,24 +88,65 @@ Remove-Item Env:\ConnectionStrings__Orquestra
 dotnet run --project Orquestra.API --launch-profile https
 ```
 
-Em ambiente `Development`, abra `https://localhost:7281/swagger`. Caso o certificado HTTPS local ainda não seja confiável, execute `dotnet dev-certs https --trust`. A API aplica as migrations e inicializa os papéis no início; o comando `dotnet ef database update` permite também verificar o banco explicitamente. Na ferramenta do EF, passe a conexão por `ConnectionStrings__Orquestra` para evitar atualizar outro banco. O bootstrap de organização e administrador é idempotente quando os quatro valores estão presentes.
+O Swagger ficará disponível em `https://localhost:7281/swagger`.
 
-## Autenticação e regras principais
+Em outro terminal, inicie a aplicação web:
 
-Use `POST /api/auth/login` com `email` e `password` para obter um JWT; envie-o em `Authorization: Bearer <token>`. `GET /api/auth/me` mostra o usuário autenticado. O token expira em uma hora; não há refresh token neste incremento, então faça novo login quando ele expirar. Cinco falhas de senha bloqueiam o login por 15 minutos. O cadastro inicial de usuário é feito pelo bootstrap local. Nesta versão, o e-mail de login é único no sistema e cada usuário pertence a uma organização.
+```powershell
+cd orquestra.web
+npm install
+npm run dev
+```
 
-Os papéis são `Admin`, `GestorTI`, `OperadorTI` e `Auditor`. `Admin`, `GestorTI` e `OperadorTI` podem operar registros. Descarte, inativação de ativo e conclusão de offboarding exigem `Admin` ou `GestorTI`. Somente `Admin` e `Auditor` consultam `/api/audit-logs`.
+A página poderá ser acessada em `http://localhost:5173`.
 
-O bootstrap cria o administrador de cada organização e inicializa os quatro papéis. Ainda não há endpoint para cadastrar outros usuários ou atribuir papéis; essa administração será um incremento separado. Nenhuma rota pública aceita `OrganizationId`.
+Se o navegador não confiar no certificado local da API, execute uma vez:
 
-| Área | Rotas principais |
+```powershell
+dotnet dev-certs https --trust
+```
+
+## Testando a autenticação
+
+No Swagger, abra `POST /api/autenticacao/entrar` e envie o e-mail e a senha do administrador:
+
+```json
+{
+  "email": "admin@minha-empresa.com.br",
+  "senha": "<sua-senha-local>"
+}
+```
+
+Copie somente o valor de `token`, clique em **Authorize** e cole o token no campo apresentado. O Swagger acrescenta o tipo `Bearer` automaticamente. Depois disso, `GET /api/autenticacao/usuario-atual` mostra os dados da sessão autenticada.
+
+O token vale por uma hora. Após cinco tentativas de senha incorreta, o acesso fica bloqueado por 15 minutos.
+
+## Principais rotas
+
+| Área | Rotas |
 | --- | --- |
-| Cadastros | `/api/departments`, `/api/employees`, `/api/asset-categories`, `/api/assets` |
-| Ativo | `/api/assets/{id}/history`, `/maintenance`, `/complete-maintenance`, `/mark-defective`, `/discard` |
-| Custódia | `/api/custodies`, `/api/custodies/{id}`, `/api/custodies/{id}/return` |
-| Desligamento | `/api/offboardings`, `/api/offboardings/{id}`, `/api/offboardings/{id}/complete` |
-| Indicadores e auditoria | `/api/dashboard`, `/api/audit-logs` |
+| Autenticação | `/api/autenticacao/entrar`, `/api/autenticacao/usuario-atual` |
+| Cadastros | `/api/departamentos`, `/api/colaboradores`, `/api/categorias-de-ativos` |
+| Ativos | `/api/ativos`, `/api/ativos/{id}/historico`, `/api/ativos/{id}/manutencao`, `/api/ativos/{id}/concluir-manutencao`, `/api/ativos/{id}/marcar-com-defeito`, `/api/ativos/{id}/descartar` |
+| Custódias | `/api/custodias`, `/api/custodias/{id}/devolver` |
+| Desligamentos | `/api/desligamentos`, `/api/desligamentos/{id}/concluir` |
+| Acompanhamento | `/api/painel`, `/api/auditoria` |
 
-As listagens aceitam `page`, `pageSize` (máximo 100) e `search`; ativos e colaboradores também aceitam filtro de estado. Exclusões dos cadastros inativam registros para preservar a rastreabilidade. A atualização de ativo exige o `rowVersion` devolvido pela leitura; o cliente deve recarregar o registro após conflito de concorrência. O status do ativo só muda pelas operações de entrega, devolução, manutenção, defeito e descarte. Uma entrega agrupa vários ativos disponíveis; a devolução pode definir cada item como disponível, em manutenção ou defeituoso. O desligamento só é concluído depois da devolução de todos os itens pendentes.
+As listagens aceitam `pagina`, `itensPorPagina`, `busca` e, quando aplicável, `situacao`. O limite é de 100 itens por página.
 
-Erros de validação, conflito, ausência e autorização usam respostas HTTP consistentes sem stack trace em produção. Movimentações e auditoria registram as ações relevantes sem senhas, tokens ou segredos.
+## Regras que protegem o histórico
+
+O Orquestra não apaga fisicamente os principais registros do negócio. Departamentos, categorias, colaboradores e ativos são inativados para que as movimentações anteriores continuem fazendo sentido.
+
+Um ativo só pode estar em uma custódia por vez. A devolução define se ele volta a ficar disponível, segue para manutenção ou é marcado com defeito. O descarte e a conclusão de um desligamento exigem perfil de Administrador ou Gestor de TI. Um desligamento só pode ser concluído depois da devolução de todos os ativos do colaborador.
+
+A atualização de um ativo usa o campo `versaoDoRegistro` para evitar que duas pessoas sobrescrevam alterações feitas ao mesmo tempo. Se houver conflito, a API orienta o usuário a recarregar os dados.
+
+## Perfis de acesso
+
+- **Administrador:** configura e opera o sistema, incluindo ações críticas e auditoria;
+- **Gestor de TI:** opera os registros e pode executar ações críticas;
+- **Operador de TI:** realiza os cadastros e as movimentações do dia a dia;
+- **Auditor:** consulta os registros de auditoria.
+
+O cadastro de novos usuários e a distribuição desses perfis ainda serão adicionados. Por enquanto, o administrador inicial é criado pela configuração de bootstrap.

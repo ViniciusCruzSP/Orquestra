@@ -19,14 +19,14 @@ public static class DependencyInjection
     {
         var connectionString = configuration.GetConnectionString("Orquestra");
         if (string.IsNullOrWhiteSpace(connectionString))
-            throw new InvalidOperationException("ConnectionStrings:Orquestra must be configured outside source control.");
+            throw new InvalidOperationException("ConnectionStrings:Orquestra deve ser configurada fora do controle de versão.");
 
         var issuer = configuration["Jwt:Issuer"];
         var audience = configuration["Jwt:Audience"];
         var key = configuration["Jwt:Key"];
         if (string.IsNullOrWhiteSpace(issuer) || string.IsNullOrWhiteSpace(audience) ||
             string.IsNullOrWhiteSpace(key) || Encoding.UTF8.GetByteCount(key) < 32)
-            throw new InvalidOperationException("Jwt:Issuer, Jwt:Audience, and a Jwt:Key of at least 32 bytes are required.");
+            throw new InvalidOperationException("Jwt:Issuer, Jwt:Audience e uma Jwt:Key com pelo menos 32 bytes são obrigatórios.");
 
         var jwt = new JwtOptions(issuer, audience, key);
         services.AddSingleton(jwt);
@@ -46,7 +46,10 @@ public static class DependencyInjection
             options.Lockout.AllowedForNewUsers = true;
             options.Lockout.MaxFailedAccessAttempts = 5;
             options.Lockout.DefaultLockoutTimeSpan = TimeSpan.FromMinutes(15);
-        }).AddRoles<IdentityRole>().AddEntityFrameworkStores<OrquestraDbContext>();
+        })
+        .AddErrorDescriber<PortugueseIdentityErrorDescriber>()
+        .AddRoles<IdentityRole>()
+        .AddEntityFrameworkStores<OrquestraDbContext>();
 
         services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             .AddJwtBearer(options =>

@@ -7,12 +7,13 @@ namespace Orquestra.Api.Controllers;
 
 [ApiController]
 [Authorize]
-[Route("api/departments")]
-public sealed class DepartmentsController(IOrquestraService service) : ControllerBase
+[Route("api/departamentos")]
+public sealed class DepartamentosController(IOrquestraService service) : ControllerBase
 {
     [HttpGet]
-    public async Task<IActionResult> List([FromQuery] int page = 1, [FromQuery] int pageSize = 20,
-        [FromQuery] string? search = null, CancellationToken ct = default)
+    public async Task<IActionResult> List([FromQuery(Name = "pagina")] int page = 1,
+        [FromQuery(Name = "itensPorPagina")] int pageSize = 20,
+        [FromQuery(Name = "busca")] string? search = null, CancellationToken ct = default)
         => Ok(await service.GetDepartmentsAsync(new PageQuery(page, pageSize, search), ct));
 
     [HttpGet("{id:guid}")]

@@ -38,27 +38,27 @@ public sealed class Employee
     public DateTimeOffset UpdatedAt { get; private set; }
     public void Update(Guid? departmentId, string fullName, string email, DateTimeOffset now)
     {
-        if (Status != EmployeeStatus.Active) throw new InvalidOperationException("Only active employees can be edited.");
+        if (Status != EmployeeStatus.Active) throw new InvalidOperationException("Somente colaboradores ativos podem ser editados.");
         DepartmentId = departmentId; FullName = fullName; Email = email; UpdatedAt = now;
     }
     public void Touch(DateTimeOffset now)
     {
-        if (Status != EmployeeStatus.Active) throw new InvalidOperationException("Employee is not active.");
+        if (Status != EmployeeStatus.Active) throw new InvalidOperationException("O colaborador não está ativo.");
         UpdatedAt = now;
     }
     public void StartOffboarding(DateTimeOffset now)
     {
-        if (Status != EmployeeStatus.Active) throw new InvalidOperationException("Employee must be active to start offboarding.");
+        if (Status != EmployeeStatus.Active) throw new InvalidOperationException("O colaborador deve estar ativo para iniciar o desligamento.");
         Status = EmployeeStatus.Offboarding; UpdatedAt = now;
     }
     public void CompleteOffboarding(DateTimeOffset now)
     {
-        if (Status != EmployeeStatus.Offboarding) throw new InvalidOperationException("Employee is not in offboarding.");
+        if (Status != EmployeeStatus.Offboarding) throw new InvalidOperationException("O colaborador não está em processo de desligamento.");
         Status = EmployeeStatus.Inactive; UpdatedAt = now;
     }
     public void Deactivate(DateTimeOffset now)
     {
-        if (Status != EmployeeStatus.Active) throw new InvalidOperationException("Employee cannot be deactivated in this state.");
+        if (Status != EmployeeStatus.Active) throw new InvalidOperationException("O colaborador não pode ser inativado nessa situação.");
         Status = EmployeeStatus.Inactive; UpdatedAt = now;
     }
 }

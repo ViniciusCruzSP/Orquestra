@@ -7,10 +7,10 @@ using Orquestra.Application.Auth;
 namespace Orquestra.Api.Controllers;
 
 [ApiController]
-[Route("api/auth")]
-public sealed class AuthController(IAuthService auth, ICurrentUser currentUser) : ControllerBase
+[Route("api/autenticacao")]
+public sealed class AutenticacaoController(IAuthService auth, ICurrentUser currentUser) : ControllerBase
 {
-    [HttpPost("login")]
+    [HttpPost("entrar")]
     [AllowAnonymous]
     [ResponseCache(NoStore = true)]
     public async Task<IActionResult> Login([FromBody] LoginRequest request, CancellationToken ct)
@@ -21,7 +21,7 @@ public sealed class AuthController(IAuthService auth, ICurrentUser currentUser) 
             : Ok(result);
     }
 
-    [HttpGet("me")]
+    [HttpGet("usuario-atual")]
     [Authorize]
     [ResponseCache(NoStore = true)]
     public async Task<IActionResult> Me(CancellationToken ct)
@@ -34,5 +34,7 @@ public sealed class AuthController(IAuthService auth, ICurrentUser currentUser) 
 }
 
 public sealed record LoginRequest(
-    [Required, EmailAddress, StringLength(254)] string Email,
-    [Required, StringLength(256)] string Password);
+    [property: System.Text.Json.Serialization.JsonPropertyName("email")]
+    [Required(ErrorMessage = "O e-mail é obrigatório."), EmailAddress(ErrorMessage = "Informe um e-mail válido."), StringLength(254)] string Email,
+    [property: System.Text.Json.Serialization.JsonPropertyName("senha")]
+    [Required(ErrorMessage = "A senha é obrigatória."), StringLength(256)] string Password);

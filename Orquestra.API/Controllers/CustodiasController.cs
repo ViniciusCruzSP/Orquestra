@@ -7,12 +7,13 @@ namespace Orquestra.Api.Controllers;
 
 [ApiController]
 [Authorize]
-[Route("api/custodies")]
-public sealed class CustodiesController(IOrquestraService service) : ControllerBase
+[Route("api/custodias")]
+public sealed class CustodiasController(IOrquestraService service) : ControllerBase
 {
     [HttpGet]
-    public async Task<IActionResult> List([FromQuery] int page = 1, [FromQuery] int pageSize = 20,
-        [FromQuery] string? search = null, CancellationToken ct = default)
+    public async Task<IActionResult> List([FromQuery(Name = "pagina")] int page = 1,
+        [FromQuery(Name = "itensPorPagina")] int pageSize = 20,
+        [FromQuery(Name = "busca")] string? search = null, CancellationToken ct = default)
         => Ok(await service.GetCustodiesAsync(new PageQuery(page, pageSize, search), ct));
 
     [HttpGet("{id:guid}")]
@@ -27,7 +28,7 @@ public sealed class CustodiesController(IOrquestraService service) : ControllerB
         return CreatedAtAction(nameof(Get), new { id = result.Id }, result);
     }
 
-    [HttpPost("{id:guid}/return")]
+    [HttpPost("{id:guid}/devolver")]
     [Authorize(Policy = Policies.ManageRecords)]
     public async Task<IActionResult> Return(Guid id, [FromBody] CustodyReturn request, CancellationToken ct)
         => Ok(await service.ReturnCustodyAsync(id, request, ct));

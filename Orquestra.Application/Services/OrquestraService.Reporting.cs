@@ -23,7 +23,7 @@ public sealed partial class OrquestraService
     public Task<PagedResult<AuditLogDto>> GetAuditLogsAsync(PageQuery query, CancellationToken ct = default)
     {
         if (!currentUser.IsInRole("Auditor") && !currentUser.IsInRole("Admin"))
-            throw new ForbiddenException("Audit log access requires Auditor or Admin role.");
+            throw new ForbiddenException("O acesso à auditoria exige o perfil Auditor ou Administrador.");
         query = CheckPage(query);
         var source = db.AuditLogs.Where(x => x.OrganizationId == OrgId);
         if (query.Search is not null)

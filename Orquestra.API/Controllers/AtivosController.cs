@@ -8,12 +8,14 @@ namespace Orquestra.Api.Controllers;
 
 [ApiController]
 [Authorize]
-[Route("api/assets")]
-public sealed class AssetsController(IOrquestraService service) : ControllerBase
+[Route("api/ativos")]
+public sealed class AtivosController(IOrquestraService service) : ControllerBase
 {
     [HttpGet]
-    public async Task<IActionResult> List([FromQuery] int page = 1, [FromQuery] int pageSize = 20,
-        [FromQuery] string? search = null, [FromQuery] AssetStatus? assetStatus = null,
+    public async Task<IActionResult> List([FromQuery(Name = "pagina")] int page = 1,
+        [FromQuery(Name = "itensPorPagina")] int pageSize = 20,
+        [FromQuery(Name = "busca")] string? search = null,
+        [FromQuery(Name = "situacao")] AssetStatus? assetStatus = null,
         CancellationToken ct = default)
         => Ok(await service.GetAssetsAsync(new PageQuery(page, pageSize, search, AssetStatus: assetStatus), ct));
 
@@ -21,9 +23,9 @@ public sealed class AssetsController(IOrquestraService service) : ControllerBase
     public async Task<IActionResult> Get(Guid id, CancellationToken ct)
         => Ok(await service.GetAssetAsync(id, ct));
 
-    [HttpGet("{id:guid}/history")]
-    public async Task<IActionResult> History(Guid id, [FromQuery] int page = 1,
-        [FromQuery] int pageSize = 20, CancellationToken ct = default)
+    [HttpGet("{id:guid}/historico")]
+    public async Task<IActionResult> History(Guid id, [FromQuery(Name = "pagina")] int page = 1,
+        [FromQuery(Name = "itensPorPagina")] int pageSize = 20, CancellationToken ct = default)
         => Ok(await service.GetAssetHistoryAsync(id, new PageQuery(page, pageSize), ct));
 
     [HttpPost]
@@ -47,23 +49,23 @@ public sealed class AssetsController(IOrquestraService service) : ControllerBase
         return NoContent();
     }
 
-    [HttpPost("{id:guid}/maintenance")]
+    [HttpPost("{id:guid}/manutencao")]
     [Authorize(Policy = Policies.ManageRecords)]
     public async Task<IActionResult> Maintenance(Guid id, [FromBody] StateChangeRequest request, CancellationToken ct)
         => Ok(await service.StartMaintenanceAsync(id, request, ct));
 
-    [HttpPost("{id:guid}/complete-maintenance")]
+    [HttpPost("{id:guid}/concluir-manutencao")]
     [Authorize(Policy = Policies.ManageRecords)]
     public async Task<IActionResult> CompleteMaintenance(Guid id, [FromBody] StateChangeRequest request,
         CancellationToken ct)
         => Ok(await service.CompleteMaintenanceAsync(id, request, ct));
 
-    [HttpPost("{id:guid}/mark-defective")]
+    [HttpPost("{id:guid}/marcar-com-defeito")]
     [Authorize(Policy = Policies.ManageRecords)]
     public async Task<IActionResult> MarkDefective(Guid id, [FromBody] StateChangeRequest request, CancellationToken ct)
         => Ok(await service.MarkDefectiveAsync(id, request, ct));
 
-    [HttpPost("{id:guid}/discard")]
+    [HttpPost("{id:guid}/descartar")]
     [Authorize(Policy = Policies.ManageCritical)]
     public async Task<IActionResult> Discard(Guid id, [FromBody] StateChangeRequest request, CancellationToken ct)
         => Ok(await service.DiscardAssetAsync(id, request, ct));

@@ -201,14 +201,14 @@ public sealed class OrquestraDbContext(
                 CustodyItem or AssetMovement or OffboardingProcess or AuditLog)) continue;
             if (entry.State is EntityState.Unchanged or EntityState.Detached) continue;
             if (entry.State == EntityState.Deleted)
-                throw new InvalidOperationException("Tracked business records cannot be physically deleted.");
+                throw new InvalidOperationException("Os registros de negócio rastreados não podem ser excluídos fisicamente.");
 
             var tenant = currentUser.OrganizationId;
             var organizationId = (Guid)entry.Property("OrganizationId").CurrentValue!;
             if (tenant == Guid.Empty || organizationId != tenant ||
                 (entry.State == EntityState.Modified &&
                  (Guid)entry.Property("OrganizationId").OriginalValue! != tenant))
-                throw new UnauthorizedAccessException("The record does not belong to the current organization.");
+                throw new UnauthorizedAccessException("O registro não pertence à organização atual.");
         }
 
         try
@@ -217,11 +217,11 @@ public sealed class OrquestraDbContext(
         }
         catch (DbUpdateConcurrencyException)
         {
-            throw new ConflictException("The record changed while you were editing it. Reload and try again.");
+            throw new ConflictException("O registro foi alterado enquanto você o editava. Recarregue os dados e tente novamente.");
         }
         catch (DbUpdateException ex) when (ex.InnerException is SqlException { Number: 2601 or 2627 })
         {
-            throw new ConflictException("A record with the same unique value already exists.");
+            throw new ConflictException("Já existe um registro com o mesmo valor único.");
         }
     }
 }
