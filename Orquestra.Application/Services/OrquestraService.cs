@@ -64,7 +64,9 @@ public sealed partial class OrquestraService(IOrquestraDb db, ICurrentUser curre
     private static EmployeeDto Map(Employee x) => new(x.Id, x.DepartmentId, x.FullName, x.Email, x.Status, x.CreatedAt, x.UpdatedAt);
     private static CategoryDto Map(AssetCategory x) => new(x.Id, x.Name, x.IsActive, x.CreatedAt, x.UpdatedAt);
     private static AssetDto Map(Asset x) => new(x.Id, x.CategoryId, x.AssetTag, x.Name, x.Brand, x.Model,
-        x.SerialNumber, x.Notes, x.Status, x.IsActive, Convert.ToBase64String(x.RowVersion), x.CreatedAt, x.UpdatedAt);
+        x.SerialNumber, x.Notes, x.Status, x.IsActive, Convert.ToBase64String(x.RowVersion), x.CreatedAt, x.UpdatedAt,
+        x.Tipo is null ? null : new(x.Tipo, x.AdquiridoEm, x.Processador, x.MemoriaRam,
+            x.Armazenamento, x.SistemaOperacional, x.TipoPeriferico));
     private static MovementDto Map(AssetMovement x) => new(x.Id, x.AssetId, x.CustodyId, x.Type,
         x.PreviousStatus, x.NewStatus, x.OccurredAt, x.PerformedByUserId, x.Notes);
     private static AuditLogDto Map(AuditLog x) => new(x.Id, x.Action, x.EntityType, x.EntityId, x.UserId, x.OccurredAt, x.Details);

@@ -26,6 +26,25 @@ public sealed class Asset
     public byte[] RowVersion { get; set; } = [];
     public DateTimeOffset CreatedAt { get; private set; }
     public DateTimeOffset UpdatedAt { get; private set; }
+    public string? Tipo { get; private set; }
+    public DateOnly? AdquiridoEm { get; private set; }
+    public string? Processador { get; private set; }
+    public string? MemoriaRam { get; private set; }
+    public string? Armazenamento { get; private set; }
+    public string? SistemaOperacional { get; private set; }
+    public string? TipoPeriferico { get; private set; }
+
+    public void DefinirEspecificacoes(string tipo, DateOnly? adquiridoEm, string? processador, string? memoriaRam,
+        string? armazenamento, string? sistemaOperacional, string? tipoPeriferico)
+    {
+        Tipo = tipo;
+        AdquiridoEm = adquiridoEm;
+        Processador = processador;
+        MemoriaRam = memoriaRam;
+        Armazenamento = armazenamento;
+        SistemaOperacional = sistemaOperacional;
+        TipoPeriferico = tipoPeriferico;
+    }
     public void Update(Guid categoryId, string assetTag, string name, string brand, string model,
         string? serialNumber, string? notes, DateTimeOffset now)
     {

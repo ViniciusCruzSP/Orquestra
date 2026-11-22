@@ -10,13 +10,49 @@ public sealed partial class OrquestraService
     public Task<PagedResult<AssetDto>> GetAssetsAsync(PageQuery query, CancellationToken ct = default)
     {
         query = CheckPage(query);
+        var resultado = Page(FiltrarAtivos(query).OrderBy(x => x.AssetTag).ThenBy(x => x.Id), query, Map);
+        var vinculos = VinculosAtuais(resultado.Items.Select(x => x.Id).ToArray());
+        return Task.FromResult(resultado with { Items = resultado.Items.Select(x => ComResponsavel(x, vinculos)).ToArray() });
+    }
+
+    private IQueryable<Asset> FiltrarAtivos(PageQuery query)
+    {
         var source = db.Assets.Where(x => x.OrganizationId == OrgId);
         if (query.Search is not null) source = source.Where(x => x.AssetTag.Contains(query.Search) ||
             x.Name.Contains(query.Search) || (x.SerialNumber != null && x.SerialNumber.Contains(query.Search)));
         if (query.AssetStatus is not null) source = source.Where(x => x.Status == query.AssetStatus);
-        return Task.FromResult(Page(source.OrderBy(x => x.AssetTag).ThenBy(x => x.Id), query, Map));
+        if (query.Tipo is not null) source = source.Where(x => x.Tipo == query.Tipo);
+        if (query.Ativo is not null) source = source.Where(x => x.IsActive == query.Ativo);
+        if (query.De is not null) source = source.Where(x => x.AdquiridoEm >= query.De);
+        if (query.Ate is not null) source = source.Where(x => x.AdquiridoEm <= query.Ate);
+        if (query.De > query.Ate) throw new ValidationException("O início do período deve ser anterior ou igual ao fim.");
+        if (query.ResponsavelId is not null)
+        {
+            var custodias = db.Custodies.Where(x => x.OrganizationId == OrgId && x.EmployeeId == query.ResponsavelId);
+            var itens = db.CustodyItems.Where(x => x.OrganizationId == OrgId && x.ReturnedAt == null &&
+                custodias.Any(c => c.Id == x.CustodyId));
+            source = source.Where(x => itens.Any(i => i.AssetId == x.Id));
+        }
+        return source;
     }
-    public Task<AssetDto> GetAssetAsync(Guid id, CancellationToken ct = default) => Task.FromResult(Map(Asset(id)));
+
+    private Dictionary<Guid, (string Nome, Guid CustodiaId)> VinculosAtuais(Guid[] ativos)
+    {
+        var vinculos = from item in db.CustodyItems
+                       join custodia in db.Custodies on item.CustodyId equals custodia.Id
+                       join colaborador in db.Employees on custodia.EmployeeId equals colaborador.Id
+                       where item.OrganizationId == OrgId && item.ReturnedAt == null && ativos.Contains(item.AssetId)
+                       select new { item.AssetId, colaborador.FullName, item.CustodyId };
+        return vinculos.ToDictionary(x => x.AssetId, x => (x.FullName, x.CustodyId));
+    }
+
+    private static AssetDto ComResponsavel(AssetDto ativo, Dictionary<Guid, (string Nome, Guid CustodiaId)> vinculos)
+        => vinculos.TryGetValue(ativo.Id, out var vinculo)
+            ? ativo with { Responsavel = vinculo.Nome, CustodiaAtualId = vinculo.CustodiaId }
+            : ativo;
+
+    public Task<AssetDto> GetAssetAsync(Guid id, CancellationToken ct = default)
+        => Task.FromResult(ComResponsavel(Map(Asset(id)), VinculosAtuais([id])));
     public async Task<AssetDto> CreateAssetAsync(AssetWrite request, CancellationToken ct = default)
     {
         if (request is null) throw new ValidationException("O corpo da requisição é obrigatório.");
@@ -26,6 +62,7 @@ public sealed partial class OrquestraService
         var now = Now;
         var asset = new Asset(OrgId, request.CategoryId, data.Tag, data.Name, data.Brand, data.Model,
             data.Serial, data.Notes, now);
+        AplicarEspecificacoes(asset, request.Especificacoes);
         db.Add(asset);
         db.Add(new AssetMovement(OrgId, asset.Id, null, MovementType.Registered, AssetStatus.Available,
             AssetStatus.Available, UserId, null, now));
@@ -45,6 +82,7 @@ public sealed partial class OrquestraService
         var now = Now;
         try { asset.Update(request.CategoryId, data.Tag, data.Name, data.Brand, data.Model, data.Serial, data.Notes, now); }
         catch (InvalidOperationException ex) { throw new ConflictException(ex.Message); }
+        AplicarEspecificacoes(asset, request.Especificacoes);
         db.Add(new AssetMovement(OrgId, id, null, MovementType.Updated, asset.Status,
             asset.Status, UserId, null, now));
         Audit("Atualizado", "Ativo", id, now);
@@ -80,7 +118,9 @@ public sealed partial class OrquestraService
     private async Task<AssetDto> ChangeStateAsync(Guid id, StateChangeRequest request, MovementType type,
         Action<Asset, DateTimeOffset> transition, CancellationToken ct)
     {
-        var notes = Optional(request?.Notes, "observações", 2000);
+        var notes = type == MovementType.Discarded
+            ? Required(request?.Notes, "motivo do descarte", 500)
+            : Optional(request?.Notes, "observações", 2000);
         var asset = Asset(id); var before = asset.Status; var now = Now;
         try { transition(asset, now); }
         catch (InvalidOperationException ex) { throw new ConflictException(ex.Message); }
@@ -111,4 +151,23 @@ public sealed partial class OrquestraService
         MovementType.Deactivated => "Inativado",
         _ => "Movimentado"
     };
+
+    private static void AplicarEspecificacoes(Asset ativo, EspecificacoesAtivo? item)
+    {
+        if (item is null) return;
+        switch (item.Tipo)
+        {
+            case "Computador":
+                ativo.DefinirEspecificacoes(item.Tipo, item.AdquiridoEm, Required(item.Processador, "processador", 120),
+                    Required(item.MemoriaRam, "memória RAM", 50), Required(item.Armazenamento, "armazenamento", 80),
+                    Required(item.SistemaOperacional, "sistema operacional", 100), null);
+                break;
+            case "Periférico":
+                ativo.DefinirEspecificacoes(item.Tipo, item.AdquiridoEm, null, null, null, null,
+                    Required(item.TipoPeriferico, "tipo de periférico", 50));
+                break;
+            default:
+                throw new ValidationException("Informe Computador ou Periférico como tipo do ativo.");
+        }
+    }
 }

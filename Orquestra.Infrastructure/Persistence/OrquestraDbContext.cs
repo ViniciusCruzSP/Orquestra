@@ -90,6 +90,12 @@ public sealed class OrquestraDbContext(
             b.Property(x => x.Brand).HasMaxLength(120).IsRequired();
             b.Property(x => x.Model).HasMaxLength(120).IsRequired();
             b.Property(x => x.SerialNumber).HasMaxLength(150);
+            b.Property(x => x.Tipo).HasMaxLength(20);
+            b.Property(x => x.Processador).HasMaxLength(120);
+            b.Property(x => x.MemoriaRam).HasMaxLength(50);
+            b.Property(x => x.Armazenamento).HasMaxLength(80);
+            b.Property(x => x.SistemaOperacional).HasMaxLength(100);
+            b.Property(x => x.TipoPeriferico).HasMaxLength(50);
             b.Property(x => x.Notes).HasMaxLength(2000);
             b.Property(x => x.Status).HasConversion<string>().HasMaxLength(24);
             b.Property(x => x.RowVersion).IsRowVersion();

@@ -4,7 +4,8 @@ using Orquestra.Domain.Enums;
 namespace Orquestra.Application.Dtos;
 
 public record PageQuery(int Page = 1, int PageSize = 20, string? Search = null,
-    AssetStatus? AssetStatus = null, EmployeeStatus? EmployeeStatus = null);
+    AssetStatus? AssetStatus = null, EmployeeStatus? EmployeeStatus = null, string? Tipo = null,
+    Guid? ResponsavelId = null, DateOnly? De = null, DateOnly? Ate = null, bool? Ativo = null);
 public record PagedResult<T>(
     [property: JsonPropertyName("itens")] IReadOnlyList<T> Items,
     [property: JsonPropertyName("total")] int Total,
@@ -48,7 +49,9 @@ public record AssetWrite(
     [property: JsonPropertyName("modelo")] string Model,
     [property: JsonPropertyName("numeroDeSerie")] string? SerialNumber,
     [property: JsonPropertyName("observacoes")] string? Notes,
-    [property: JsonPropertyName("versaoDoRegistro")] string? RowVersion = null);
+    [property: JsonPropertyName("versaoDoRegistro")] string? RowVersion = null, EspecificacoesAtivo? Especificacoes = null);
+public record EspecificacoesAtivo(string Tipo, DateOnly? AdquiridoEm, string? Processador,
+    string? MemoriaRam, string? Armazenamento, string? SistemaOperacional, string? TipoPeriferico);
 public record AssetDto(
     [property: JsonPropertyName("id")] Guid Id,
     [property: JsonPropertyName("categoriaId")] Guid CategoryId,
@@ -62,8 +65,11 @@ public record AssetDto(
     [property: JsonPropertyName("ativo")] bool IsActive,
     [property: JsonPropertyName("versaoDoRegistro")] string RowVersion,
     [property: JsonPropertyName("criadoEm")] DateTimeOffset CreatedAt,
-    [property: JsonPropertyName("atualizadoEm")] DateTimeOffset UpdatedAt);
+    [property: JsonPropertyName("atualizadoEm")] DateTimeOffset UpdatedAt, EspecificacoesAtivo? Especificacoes = null,
+    string? Responsavel = null, Guid? CustodiaAtualId = null);
 public record StateChangeRequest([property: JsonPropertyName("observacoes")] string? Notes);
+public record MovimentoInventario(Guid Id, Guid AtivoId, string Patrimonio, string Nome, MovementType Operacao,
+    AssetStatus SituacaoAnterior, AssetStatus NovaSituacao, DateTimeOffset OcorridoEm, string UsuarioId, string? Motivo);
 public record MovementDto(
     [property: JsonPropertyName("id")] Guid Id,
     [property: JsonPropertyName("ativoId")] Guid AssetId,

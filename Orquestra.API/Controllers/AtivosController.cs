@@ -16,8 +16,11 @@ public sealed class AtivosController(IOrquestraService service) : ControllerBase
         [FromQuery(Name = "itensPorPagina")] int pageSize = 20,
         [FromQuery(Name = "busca")] string? search = null,
         [FromQuery(Name = "situacao")] AssetStatus? assetStatus = null,
+        [FromQuery] string? tipo = null, [FromQuery] Guid? responsavelId = null,
+        [FromQuery] DateOnly? de = null, [FromQuery] DateOnly? ate = null, [FromQuery] bool? ativo = null,
         CancellationToken ct = default)
-        => Ok(await service.GetAssetsAsync(new PageQuery(page, pageSize, search, AssetStatus: assetStatus), ct));
+        => Ok(await service.GetAssetsAsync(new PageQuery(page, pageSize, search, AssetStatus: assetStatus,
+            Tipo: tipo, ResponsavelId: responsavelId, De: de, Ate: ate, Ativo: ativo), ct));
 
     [HttpGet("{id:guid}")]
     public async Task<IActionResult> Get(Guid id, CancellationToken ct)
@@ -66,7 +69,7 @@ public sealed class AtivosController(IOrquestraService service) : ControllerBase
         => Ok(await service.MarkDefectiveAsync(id, request, ct));
 
     [HttpPost("{id:guid}/descartar")]
-    [Authorize(Policy = Policies.ManageCritical)]
+    [Authorize(Roles = Roles.Admin)]
     public async Task<IActionResult> Discard(Guid id, [FromBody] StateChangeRequest request, CancellationToken ct)
         => Ok(await service.DiscardAssetAsync(id, request, ct));
 }

@@ -4,6 +4,7 @@ namespace Orquestra.Application.Services;
 
 public interface IOrquestraService
 {
+    PagedResult<MovimentoInventario> HistoricoInventario(PageQuery query);
     Task<PagedResult<DepartmentDto>> GetDepartmentsAsync(PageQuery query, CancellationToken ct = default);
     Task<DepartmentDto> GetDepartmentAsync(Guid id, CancellationToken ct = default);
     Task<DepartmentDto> CreateDepartmentAsync(DepartmentWrite request, CancellationToken ct = default);
