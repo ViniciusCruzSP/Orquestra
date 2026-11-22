@@ -4,7 +4,7 @@ O Orquestra nasceu de um problema comum nas empresas: depois de algum tempo, nin
 
 A proposta do projeto é reunir esse controle em um só lugar. O sistema registra o inventário de ativos de TI, as entregas e devoluções, as manutenções, os defeitos e os descartes. Também acompanha o desligamento de colaboradores para evitar que um processo seja encerrado enquanto ainda existirem equipamentos pendentes.
 
-Este é o repositório da API em ASP.NET Core. A interface em Next.js fica no repositório `orquestra-web` e usa as rotas em português. A pasta `orquestra.web` contém a página Vite original.
+Este é o repositório da API em ASP.NET Core. A interface em Next.js usa as rotas em português e fica no [repositório Orquestra Web](https://github.com/ViniciusCruzSP/orquestra-web). A pasta `orquestra.web` contém a página Vite original.
 
 ## O que já funciona
 
