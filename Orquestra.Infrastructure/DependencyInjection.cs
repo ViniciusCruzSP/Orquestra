@@ -33,6 +33,7 @@ public static class DependencyInjection
         services.AddDbContext<OrquestraDbContext>(options => options.UseSqlServer(connectionString));
         services.AddScoped<IOrquestraDb>(provider => provider.GetRequiredService<OrquestraDbContext>());
         services.AddScoped<IAuthService, AuthService>();
+        services.AddSingleton<IGeradorTermo, GeradorTermoPdf>();
         services.AddScoped<DatabaseBootstrapper>();
 
         services.AddIdentityCore<ApplicationUser>(options =>

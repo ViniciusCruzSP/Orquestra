@@ -20,6 +20,13 @@ public sealed class CustodiasController(IOrquestraService service) : ControllerB
     public async Task<IActionResult> Get(Guid id, CancellationToken ct)
         => Ok(await service.GetCustodyAsync(id, ct));
 
+    [HttpGet("{id:guid}/termo")]
+    [Authorize(Policy = Policies.ManageRecords)]
+    [ResponseCache(NoStore = true)]
+    [Produces("application/pdf")]
+    public IActionResult Termo(Guid id) =>
+        File(service.ObterTermo(id), "application/pdf", $"termo-{id:N}.pdf");
+
     [HttpPost]
     [Authorize(Policy = Policies.ManageRecords)]
     public async Task<IActionResult> Create([FromBody] CustodyCreate request, CancellationToken ct)

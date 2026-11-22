@@ -6,7 +6,7 @@ using Orquestra.Domain.Entities;
 
 namespace Orquestra.Application.Services;
 
-public sealed partial class OrquestraService(IOrquestraDb db, ICurrentUser currentUser) : IOrquestraService
+public sealed partial class OrquestraService(IOrquestraDb db, ICurrentUser currentUser, IGeradorTermo geradorTermo) : IOrquestraService
 {
     private Guid OrgId => currentUser.OrganizationId != Guid.Empty
         ? currentUser.OrganizationId : throw new ForbiddenException("O contexto da organização é obrigatório.");

@@ -140,6 +140,10 @@ O Orquestra não apaga fisicamente os principais registros do negócio. Departam
 
 Um ativo só pode estar em uma custódia por vez. A devolução define se ele volta a ficar disponível, segue para manutenção ou é marcado com defeito. O descarte e a conclusão de um desligamento exigem perfil de Administrador ou Gestor de TI. Um desligamento só pode ser concluído depois da devolução de todos os ativos do colaborador.
 
+Ao registrar uma entrega, a API gera um termo de compromisso em PDF para os equipamentos daquela custódia. O PDF guarda os dados da entrega no momento da emissão e contém espaço para assinatura manual. Se a geração falhar, a entrega não é gravada. Para baixar, use `GET /api/custodias/{id}/termo` com uma conta da mesma organização com permissão de operação. Custódias anteriores à funcionalidade podem não ter termo.
+
+O PDF usa [QuestPDF](https://www.questpdf.com/license/community.html) sob a licença Community para o contexto acadêmico. Em outro contexto de uso, confira a licença aplicável antes de publicar.
+
 A atualização de um ativo usa o campo `versaoDoRegistro` para evitar que duas pessoas sobrescrevam alterações feitas ao mesmo tempo. Se houver conflito, a API orienta o usuário a recarregar os dados.
 
 ## Perfis de acesso

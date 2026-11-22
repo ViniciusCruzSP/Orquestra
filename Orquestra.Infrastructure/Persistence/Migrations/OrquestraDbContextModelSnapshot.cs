@@ -577,6 +577,35 @@ namespace Orquestra.Infrastructure.Persistence.Migrations
                     b.ToTable("Organizations", (string)null);
                 });
 
+            modelBuilder.Entity("Orquestra.Domain.Entities.TermoCompromisso", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("CustodiaId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTimeOffset>("GeradoEm")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<Guid>("OrganizationId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<byte[]>("Pdf")
+                        .IsRequired()
+                        .HasColumnType("varbinary(max)");
+
+                    b.HasKey("Id");
+
+                    b.HasAlternateKey("OrganizationId", "Id");
+
+                    b.HasIndex("OrganizationId", "CustodiaId")
+                        .IsUnique();
+
+                    b.ToTable("TermosCompromisso", (string)null);
+                });
+
             modelBuilder.Entity("Orquestra.Infrastructure.Identity.ApplicationUser", b =>
                 {
                     b.Property<string>("Id")
@@ -831,6 +860,22 @@ namespace Orquestra.Infrastructure.Persistence.Migrations
                     b.HasOne("Orquestra.Domain.Entities.Employee", null)
                         .WithMany()
                         .HasForeignKey("OrganizationId", "EmployeeId")
+                        .HasPrincipalKey("OrganizationId", "Id")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("Orquestra.Domain.Entities.TermoCompromisso", b =>
+                {
+                    b.HasOne("Orquestra.Domain.Entities.Organization", null)
+                        .WithMany()
+                        .HasForeignKey("OrganizationId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Orquestra.Domain.Entities.Custody", null)
+                        .WithMany()
+                        .HasForeignKey("OrganizationId", "CustodiaId")
                         .HasPrincipalKey("OrganizationId", "Id")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();

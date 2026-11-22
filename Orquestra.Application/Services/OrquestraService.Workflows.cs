@@ -1,4 +1,5 @@
 using Orquestra.Application.Dtos;
+using Orquestra.Application.Abstractions;
 using Orquestra.Application.Errors;
 using Orquestra.Domain.Entities;
 using Orquestra.Domain.Enums;
@@ -20,6 +21,12 @@ public sealed partial class OrquestraService
         return Task.FromResult(Page(source.OrderByDescending(x => x.DeliveredAt).ThenByDescending(x => x.Id), query, MapCustody));
     }
     public Task<CustodyDto> GetCustodyAsync(Guid id, CancellationToken ct = default) => Task.FromResult(MapCustody(Custody(id)));
+
+    public byte[] ObterTermo(Guid custodiaId) => db.TermosCompromisso
+        .Where(x => x.OrganizationId == OrgId && x.CustodiaId == custodiaId)
+        .Select(x => x.Pdf).SingleOrDefault()
+        ?? throw new NotFoundException("Termo de compromisso não encontrado.");
+
     public async Task<CustodyDto> CreateCustodyAsync(CustodyCreate request, CancellationToken ct = default)
     {
         if (request is null) throw new ValidationException("O corpo da requisição é obrigatório.");
@@ -39,7 +46,15 @@ public sealed partial class OrquestraService
             throw new ConflictException("Um ou mais ativos já possuem uma custódia ativa.");
         var now = Now; employee.Touch(now);
         var custody = new Custody(OrgId, employee.Id, UserId, notes, now);
+        var organizacao = db.Organizations.Single(x => x.Id == OrgId);
+        var departamento = db.Departments.Where(x => x.OrganizationId == OrgId && x.Id == employee.DepartmentId)
+            .Select(x => x.Name).SingleOrDefault();
+        var equipamentos = assets.Values.OrderBy(x => x.AssetTag)
+            .Select(x => new EquipamentoEntregue(x.AssetTag, x.Name, x.Brand, x.Model, x.SerialNumber)).ToArray();
+        var pdf = geradorTermo.Gerar(new DadosTermo(custody.Id, organizacao.Name,
+            employee.FullName, employee.Email, departamento, now, equipamentos));
         db.Add(custody);
+        db.Add(new TermoCompromisso(OrgId, custody.Id, now, pdf));
         foreach (var asset in assets.Values)
         {
             var before = asset.Status; asset.Assign(now);
@@ -49,6 +64,7 @@ public sealed partial class OrquestraService
             Audit("Entregue", "Ativo", asset.Id, now);
         }
         Audit("Criada", "Custódia", custody.Id, now);
+        Audit("Termo gerado", "Custódia", custody.Id, now);
         await db.SaveChangesAsync(ct); return MapCustody(custody);
     }
     public async Task<CustodyDto> ReturnCustodyAsync(Guid id, CustodyReturn request, CancellationToken ct = default)

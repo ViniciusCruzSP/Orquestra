@@ -20,6 +20,7 @@ public sealed class OrquestraDbContext(
     IQueryable<AssetCategory> IOrquestraDb.AssetCategories => Set<AssetCategory>();
     IQueryable<Asset> IOrquestraDb.Assets => Set<Asset>();
     IQueryable<Custody> IOrquestraDb.Custodies => Set<Custody>();
+    IQueryable<TermoCompromisso> IOrquestraDb.TermosCompromisso => Set<TermoCompromisso>();
     IQueryable<CustodyItem> IOrquestraDb.CustodyItems => Set<CustodyItem>();
     IQueryable<AssetMovement> IOrquestraDb.AssetMovements => Set<AssetMovement>();
     IQueryable<OffboardingProcess> IOrquestraDb.Offboardings => Set<OffboardingProcess>();
@@ -111,6 +112,15 @@ public sealed class OrquestraDbContext(
                 .OnDelete(DeleteBehavior.Restrict);
         });
 
+        ConfigureTenantEntity<TermoCompromisso>(modelBuilder, "TermosCompromisso");
+        modelBuilder.Entity<TermoCompromisso>(b =>
+        {
+            b.Property(x => x.Pdf).IsRequired();
+            b.HasIndex(x => new { x.OrganizationId, x.CustodiaId }).IsUnique();
+            b.HasOne<Custody>().WithMany().HasForeignKey(x => new { x.OrganizationId, x.CustodiaId })
+                .HasPrincipalKey(x => new { x.OrganizationId, x.Id }).OnDelete(DeleteBehavior.Restrict);
+        });
+
         ConfigureTenantEntity<CustodyItem>(modelBuilder, "CustodyItems");
         modelBuilder.Entity<CustodyItem>(b =>
         {
@@ -198,10 +208,12 @@ public sealed class OrquestraDbContext(
         foreach (var entry in ChangeTracker.Entries())
         {
             if (entry.Entity is not (Department or Employee or AssetCategory or Asset or Custody or
-                CustodyItem or AssetMovement or OffboardingProcess or AuditLog)) continue;
+                CustodyItem or AssetMovement or OffboardingProcess or AuditLog or TermoCompromisso)) continue;
             if (entry.State is EntityState.Unchanged or EntityState.Detached) continue;
             if (entry.State == EntityState.Deleted)
                 throw new InvalidOperationException("Os registros de negócio rastreados não podem ser excluídos fisicamente.");
+            if (entry.State == EntityState.Modified && entry.Entity is TermoCompromisso or AssetMovement or AuditLog)
+                throw new InvalidOperationException("Documentos emitidos e registros de histórico não podem ser alterados.");
 
             var tenant = currentUser.OrganizationId;
             var organizationId = (Guid)entry.Property("OrganizationId").CurrentValue!;
