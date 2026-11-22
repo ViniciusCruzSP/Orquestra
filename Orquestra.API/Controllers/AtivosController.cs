@@ -32,7 +32,7 @@ public sealed class AtivosController(IOrquestraService service) : ControllerBase
         => Ok(await service.GetAssetHistoryAsync(id, new PageQuery(page, pageSize), ct));
 
     [HttpPost]
-    [Authorize(Policy = Policies.ManageRecords)]
+    [Authorize(Roles = Roles.Admin)]
     public async Task<IActionResult> Create([FromBody] AssetWrite request, CancellationToken ct)
     {
         var result = await service.CreateAssetAsync(request, ct);
@@ -40,12 +40,12 @@ public sealed class AtivosController(IOrquestraService service) : ControllerBase
     }
 
     [HttpPut("{id:guid}")]
-    [Authorize(Policy = Policies.ManageRecords)]
+    [Authorize(Roles = Roles.Admin)]
     public async Task<IActionResult> Update(Guid id, [FromBody] AssetWrite request, CancellationToken ct)
         => Ok(await service.UpdateAssetAsync(id, request, ct));
 
     [HttpDelete("{id:guid}")]
-    [Authorize(Policy = Policies.ManageCritical)]
+    [Authorize(Roles = Roles.Admin)]
     public async Task<IActionResult> Delete(Guid id, CancellationToken ct)
     {
         await service.DeleteAssetAsync(id, ct);

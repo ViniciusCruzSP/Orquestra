@@ -21,14 +21,14 @@ public sealed class CustodiasController(IOrquestraService service) : ControllerB
         => Ok(await service.GetCustodyAsync(id, ct));
 
     [HttpGet("{id:guid}/termo")]
-    [Authorize(Policy = Policies.ManageRecords)]
+    [Authorize(Roles = Roles.Admin)]
     [ResponseCache(NoStore = true)]
     [Produces("application/pdf")]
     public IActionResult Termo(Guid id) =>
         File(service.ObterTermo(id), "application/pdf", $"termo-{id:N}.pdf");
 
     [HttpPost]
-    [Authorize(Policy = Policies.ManageRecords)]
+    [Authorize(Roles = Roles.Admin)]
     public async Task<IActionResult> Create([FromBody] CustodyCreate request, CancellationToken ct)
     {
         var result = await service.CreateCustodyAsync(request, ct);
@@ -36,7 +36,7 @@ public sealed class CustodiasController(IOrquestraService service) : ControllerB
     }
 
     [HttpPost("{id:guid}/devolver")]
-    [Authorize(Policy = Policies.ManageRecords)]
+    [Authorize(Roles = Roles.Admin)]
     public async Task<IActionResult> Return(Guid id, [FromBody] CustodyReturn request, CancellationToken ct)
         => Ok(await service.ReturnCustodyAsync(id, request, ct));
 }

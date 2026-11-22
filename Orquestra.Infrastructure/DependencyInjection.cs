@@ -35,6 +35,7 @@ public static class DependencyInjection
         services.AddScoped<IAuthService, AuthService>();
         services.AddSingleton<IGeradorTermo, GeradorTermoPdf>();
         services.AddScoped<DatabaseBootstrapper>();
+        services.AddDataProtection();
 
         services.AddIdentityCore<ApplicationUser>(options =>
         {

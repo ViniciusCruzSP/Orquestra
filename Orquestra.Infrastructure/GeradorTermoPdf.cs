@@ -29,6 +29,10 @@ internal sealed class GeradorTermoPdf : IGeradorTermo
                 coluna.Item().Text($"Colaborador: {dados.Colaborador} · {dados.Email}");
                 if (dados.Departamento is not null)
                     coluna.Item().Text($"Departamento: {dados.Departamento}");
+                if (dados.CpfMascarado is not null)
+                    coluna.Item().Text($"CPF: {dados.CpfMascarado}");
+                if (dados.Cargo is not null)
+                    coluna.Item().Text($"Cargo: {dados.Cargo}");
                 coluna.Item().Text($"Entrega: {dados.EntregueEm.ToString("dd/MM/yyyy HH:mm 'UTC'zzz", CultureInfo.InvariantCulture)}");
                 coluna.Item().Table(tabela =>
                 {
@@ -42,8 +46,9 @@ internal sealed class GeradorTermoPdf : IGeradorTermo
                     {
                         tabela.Cell().BorderBottom(1).BorderColor("#D9D9D9").Padding(6).Text(item.Patrimonio);
                         var serie = string.IsNullOrWhiteSpace(item.Serie) ? "" : $" · Série {item.Serie}";
+                        var tipo = item.Tipo is null ? "" : $" · {item.Tipo}";
                         tabela.Cell().BorderBottom(1).BorderColor("#D9D9D9").Padding(6)
-                            .Text($"{item.Nome} · {item.Marca} {item.Modelo}{serie}");
+                            .Text($"{item.Nome} · {item.Marca} {item.Modelo}{tipo}{serie}");
                     }
                 });
                 coluna.Item().ShowEntire().PaddingTop(34).AlignCenter().Column(assinatura =>

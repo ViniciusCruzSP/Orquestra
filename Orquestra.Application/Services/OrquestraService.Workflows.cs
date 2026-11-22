@@ -50,9 +50,10 @@ public sealed partial class OrquestraService
         var departamento = db.Departments.Where(x => x.OrganizationId == OrgId && x.Id == employee.DepartmentId)
             .Select(x => x.Name).SingleOrDefault();
         var equipamentos = assets.Values.OrderBy(x => x.AssetTag)
-            .Select(x => new EquipamentoEntregue(x.AssetTag, x.Name, x.Brand, x.Model, x.SerialNumber)).ToArray();
+            .Select(x => new EquipamentoEntregue(x.AssetTag, x.Name, x.Brand, x.Model, x.SerialNumber, x.Tipo)).ToArray();
         var pdf = geradorTermo.Gerar(new DadosTermo(custody.Id, organizacao.Name,
-            employee.FullName, employee.Email, departamento, now, equipamentos));
+            employee.FullName, employee.Email, departamento, now, equipamentos,
+            employee.Cpf is { Length: 11 } cpf ? $"***.***.***-{cpf[^2..]}" : null, employee.Cargo));
         db.Add(custody);
         db.Add(new TermoCompromisso(OrgId, custody.Id, now, pdf));
         foreach (var asset in assets.Values)
