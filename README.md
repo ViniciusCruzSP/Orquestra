@@ -126,9 +126,9 @@ As listagens aceitam `pagina`, `itensPorPagina`, `busca` e, quando aplicável, `
 
 O Orquestra não apaga fisicamente os principais registros do negócio. Departamentos, categorias, colaboradores e ativos são inativados para que as movimentações anteriores continuem fazendo sentido.
 
-Um ativo só pode estar em uma custódia por vez. A devolução define se ele volta a ficar disponível, segue para manutenção ou é marcado com defeito. O descarte e a conclusão de um desligamento exigem perfil de Administrador ou Gestor de TI. Um desligamento só pode ser concluído depois da devolução de todos os ativos do colaborador.
+Um ativo só pode estar em uma custódia por vez. A devolução define se ele volta a ficar disponível, segue para manutenção ou é marcado com defeito. Cadastro, edição e inativação de ativos e colaboradores, entrega, devolução e descarte exigem o perfil de Administrador. O descarte exige motivo. O Administrador ou Gestor de TI pode concluir um desligamento depois da devolução de todos os ativos do colaborador.
 
-Ao registrar uma entrega, a API gera um termo de compromisso em PDF para os equipamentos daquela custódia. O PDF guarda os dados da entrega no momento da emissão e contém espaço para assinatura manual. Se a geração falhar, a entrega não é gravada. Para baixar, use `GET /api/custodias/{id}/termo` com uma conta da mesma organização com permissão de operação. Custódias anteriores à funcionalidade podem não ter termo.
+Ao registrar uma entrega, a API gera um termo de compromisso em PDF para os equipamentos daquela custódia. O PDF guarda os dados da entrega no momento da emissão e contém espaço para assinatura manual. Se a geração falhar, a entrega não é gravada. O administrador usa `GET /api/custodias/{id}/termo`. O colaborador vinculado usa `GET /api/minha-area/custodias/{id}/termo`. Custódias anteriores à funcionalidade podem não ter termo.
 
 O PDF usa [QuestPDF](https://www.questpdf.com/license/community.html) sob a licença Community para o contexto acadêmico. Em outro contexto de uso, confira a licença aplicável antes de publicar.
 
@@ -148,3 +148,9 @@ O perfil **Colaborador** consulta apenas suas próprias entregas, devoluções e
 Configure `Email:Servidor`, `Email:Porta`, `Email:Remetente` e `Email:UrlFrontend` (por exemplo, `http://localhost:3000` no desenvolvimento). Se o servidor SMTP exigir autenticação, inclua `Email:Usuario` e `Email:Senha` nos segredos do ambiente. O SMTP deve oferecer STARTTLS. O endereço externo do frontend deve usar HTTPS. Em produção com mais de uma instância, compartilhe as chaves do ASP.NET Core Data Protection entre as instâncias.
 
 `Jwt:DuracaoMinutos` define a validade do JWT (60 minutos por padrão). Sessões emitidas antes da alteração de perfil, redefinição de senha ou inativação deixam de ser aceitas.
+
+## Homologação
+
+O GitHub Actions compila a API e valida se o modelo coincide com as migrações. Antes de colocar o sistema em uso, teste o fluxo completo em um banco SQL Server de homologação: novos cadastros, entrega, PDF, devolução, desligamento, isolamento entre organizações e recuperação por SMTP.
+
+Em produção, configure HTTPS e monitore o tempo de resposta e a disponibilidade. A meta do projeto é responder em até 3 segundos nas condições normais de uso e manter 99,5% de disponibilidade entre 07h e 20h em dias úteis. Agende backup diário do SQL Server com retenção de 30 dias e teste a restauração. Essas metas e rotinas dependem da infraestrutura escolhida e ainda precisam ser validadas no ambiente de destino.

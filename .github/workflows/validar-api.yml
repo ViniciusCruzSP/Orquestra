@@ -1,0 +1,21 @@
+name: Validar API
+
+on: [push, pull_request]
+
+permissions:
+  contents: read
+
+jobs:
+  compilacao:
+    runs-on: ubuntu-latest
+    env:
+      ConnectionStrings__Orquestra: Server=localhost;Database=OrquestraValidacao;TrustServerCertificate=True
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+      - run: dotnet restore Orquestra.slnx
+      - run: dotnet build Orquestra.slnx --no-restore --configuration Release
+      - run: dotnet tool install --tool-path ./.ferramentas dotnet-ef --version 10.0.12
+      - run: ./.ferramentas/dotnet-ef migrations has-pending-model-changes --project Orquestra.Infrastructure --startup-project Orquestra.Infrastructure --configuration Release --no-build
