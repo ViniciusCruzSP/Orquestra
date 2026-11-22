@@ -8,21 +8,25 @@ namespace Orquestra.Api.Controllers;
 
 [ApiController]
 [Authorize]
-[Route("api/employees")]
-public sealed class EmployeesController(IOrquestraService service) : ControllerBase
+[Route("api/colaboradores")]
+public sealed class ColaboradoresController(IOrquestraService service) : ControllerBase
 {
     [HttpGet]
-    public async Task<IActionResult> List([FromQuery] int page = 1, [FromQuery] int pageSize = 20,
-        [FromQuery] string? search = null, [FromQuery] EmployeeStatus? employeeStatus = null,
+    public async Task<IActionResult> List([FromQuery(Name = "pagina")] int page = 1,
+        [FromQuery(Name = "itensPorPagina")] int pageSize = 20,
+        [FromQuery(Name = "busca")] string? search = null,
+        [FromQuery(Name = "situacao")] EmployeeStatus? employeeStatus = null,
+        [FromQuery] Guid? departamentoId = null,
         CancellationToken ct = default)
-        => Ok(await service.GetEmployeesAsync(new PageQuery(page, pageSize, search, EmployeeStatus: employeeStatus), ct));
+        => Ok(await service.GetEmployeesAsync(new PageQuery(page, pageSize, search, EmployeeStatus: employeeStatus,
+            DepartamentoId: departamentoId), ct));
 
     [HttpGet("{id:guid}")]
     public async Task<IActionResult> Get(Guid id, CancellationToken ct)
         => Ok(await service.GetEmployeeAsync(id, ct));
 
     [HttpPost]
-    [Authorize(Policy = Policies.ManageRecords)]
+    [Authorize(Roles = Roles.Admin)]
     public async Task<IActionResult> Create([FromBody] EmployeeWrite request, CancellationToken ct)
     {
         var result = await service.CreateEmployeeAsync(request, ct);
@@ -30,12 +34,12 @@ public sealed class EmployeesController(IOrquestraService service) : ControllerB
     }
 
     [HttpPut("{id:guid}")]
-    [Authorize(Policy = Policies.ManageRecords)]
+    [Authorize(Roles = Roles.Admin)]
     public async Task<IActionResult> Update(Guid id, [FromBody] EmployeeWrite request, CancellationToken ct)
         => Ok(await service.UpdateEmployeeAsync(id, request, ct));
 
     [HttpDelete("{id:guid}")]
-    [Authorize(Policy = Policies.ManageCritical)]
+    [Authorize(Roles = Roles.Admin)]
     public async Task<IActionResult> Delete(Guid id, CancellationToken ct)
     {
         await service.DeleteEmployeeAsync(id, ct);

@@ -10,6 +10,7 @@ public interface IOrquestraDb
     IQueryable<AssetCategory> AssetCategories { get; }
     IQueryable<Asset> Assets { get; }
     IQueryable<Custody> Custodies { get; }
+    IQueryable<TermoCompromisso> TermosCompromisso { get; }
     IQueryable<CustodyItem> CustodyItems { get; }
     IQueryable<AssetMovement> AssetMovements { get; }
     IQueryable<OffboardingProcess> Offboardings { get; }

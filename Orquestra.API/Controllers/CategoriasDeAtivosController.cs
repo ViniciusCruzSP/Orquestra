@@ -7,12 +7,13 @@ namespace Orquestra.Api.Controllers;
 
 [ApiController]
 [Authorize]
-[Route("api/asset-categories")]
-public sealed class AssetCategoriesController(IOrquestraService service) : ControllerBase
+[Route("api/categorias-de-ativos")]
+public sealed class CategoriasDeAtivosController(IOrquestraService service) : ControllerBase
 {
     [HttpGet]
-    public async Task<IActionResult> List([FromQuery] int page = 1, [FromQuery] int pageSize = 20,
-        [FromQuery] string? search = null, CancellationToken ct = default)
+    public async Task<IActionResult> List([FromQuery(Name = "pagina")] int page = 1,
+        [FromQuery(Name = "itensPorPagina")] int pageSize = 20,
+        [FromQuery(Name = "busca")] string? search = null, CancellationToken ct = default)
         => Ok(await service.GetCategoriesAsync(new PageQuery(page, pageSize, search), ct));
 
     [HttpGet("{id:guid}")]

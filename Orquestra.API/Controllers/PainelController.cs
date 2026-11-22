@@ -6,8 +6,8 @@ namespace Orquestra.Api.Controllers;
 
 [ApiController]
 [Authorize]
-[Route("api/dashboard")]
-public sealed class DashboardController(IOrquestraService service) : ControllerBase
+[Route("api/painel")]
+public sealed class PainelController(IOrquestraService service) : ControllerBase
 {
     [HttpGet]
     public async Task<IActionResult> Get(CancellationToken ct)

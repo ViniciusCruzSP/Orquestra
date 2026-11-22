@@ -17,23 +17,23 @@ public sealed partial class OrquestraService
     public Task<DepartmentDto> GetDepartmentAsync(Guid id, CancellationToken ct = default) => Task.FromResult(Map(Department(id)));
     public async Task<DepartmentDto> CreateDepartmentAsync(DepartmentWrite request, CancellationToken ct = default)
     {
-        if (request is null) throw new ValidationException("Request body is required.");
-        var name = Required(request.Name, "Name", 120);
+        if (request is null) throw new ValidationException("O corpo da requisição é obrigatório.");
+        var name = Required(request.Name, "nome", 120);
         if (db.Departments.Any(x => x.OrganizationId == OrgId && x.Name == name && x.IsActive))
-            throw new ConflictException("An active department with this name already exists.");
+            throw new ConflictException("Já existe um departamento ativo com esse nome.");
         var now = Now; var entity = new Department(OrgId, name, now);
-        db.Add(entity); Audit("Created", "Department", entity.Id, now);
+        db.Add(entity); Audit("Criado", "Departamento", entity.Id, now);
         await db.SaveChangesAsync(ct); return Map(entity);
     }
     public async Task<DepartmentDto> UpdateDepartmentAsync(Guid id, DepartmentWrite request, CancellationToken ct = default)
     {
-        if (request is null) throw new ValidationException("Request body is required.");
+        if (request is null) throw new ValidationException("O corpo da requisição é obrigatório.");
         var entity = Department(id);
-        if (!entity.IsActive) throw new ConflictException("Department is inactive.");
-        var name = Required(request.Name, "Name", 120);
+        if (!entity.IsActive) throw new ConflictException("O departamento está inativo.");
+        var name = Required(request.Name, "nome", 120);
         if (db.Departments.Any(x => x.OrganizationId == OrgId && x.Id != id && x.Name == name && x.IsActive))
-            throw new ConflictException("An active department with this name already exists.");
-        var now = Now; entity.Update(name, now); Audit("Updated", "Department", id, now);
+            throw new ConflictException("Já existe um departamento ativo com esse nome.");
+        var now = Now; entity.Update(name, now); Audit("Atualizado", "Departamento", id, now);
         await db.SaveChangesAsync(ct); return Map(entity);
     }
     public async Task DeleteDepartmentAsync(Guid id, CancellationToken ct = default)
@@ -41,8 +41,8 @@ public sealed partial class OrquestraService
         var entity = Department(id);
         if (!entity.IsActive) return;
         if (db.Employees.Any(x => x.OrganizationId == OrgId && x.DepartmentId == id && x.Status != EmployeeStatus.Inactive))
-            throw new ConflictException("Department has active employees.");
-        var now = Now; entity.Deactivate(now); Audit("Deactivated", "Department", id, now);
+            throw new ConflictException("O departamento possui colaboradores ativos.");
+        var now = Now; entity.Deactivate(now); Audit("Inativado", "Departamento", id, now);
         await db.SaveChangesAsync(ct);
     }
 
@@ -52,31 +52,34 @@ public sealed partial class OrquestraService
         var source = db.Employees.Where(x => x.OrganizationId == OrgId);
         if (query.Search is not null) source = source.Where(x => x.FullName.Contains(query.Search) || x.Email.Contains(query.Search));
         if (query.EmployeeStatus is not null) source = source.Where(x => x.Status == query.EmployeeStatus);
+        if (query.DepartamentoId is not null) source = source.Where(x => x.DepartmentId == query.DepartamentoId);
         return Task.FromResult(Page(source.OrderBy(x => x.FullName).ThenBy(x => x.Id), query, Map));
     }
     public Task<EmployeeDto> GetEmployeeAsync(Guid id, CancellationToken ct = default) => Task.FromResult(Map(Employee(id)));
     public async Task<EmployeeDto> CreateEmployeeAsync(EmployeeWrite request, CancellationToken ct = default)
     {
-        if (request is null) throw new ValidationException("Request body is required.");
-        var name = Required(request.FullName, "FullName", 160); var email = Email(request.Email);
+        if (request is null) throw new ValidationException("O corpo da requisição é obrigatório.");
+        var name = Required(request.FullName, "nome completo", 160); var email = Email(request.Email);
         CheckDepartment(request.DepartmentId);
         if (db.Employees.Any(x => x.OrganizationId == OrgId && x.Email == email && x.Status != EmployeeStatus.Inactive))
-            throw new ConflictException("An active employee with this email already exists.");
+            throw new ConflictException("Já existe um colaborador ativo com esse e-mail.");
         var now = Now; var entity = new Employee(OrgId, request.DepartmentId, name, email, now);
-        db.Add(entity); Audit("Created", "Employee", entity.Id, now);
+        DefinirContato(entity, request);
+        db.Add(entity); Audit("Criado", "Colaborador", entity.Id, now);
         await db.SaveChangesAsync(ct); return Map(entity);
     }
     public async Task<EmployeeDto> UpdateEmployeeAsync(Guid id, EmployeeWrite request, CancellationToken ct = default)
     {
-        if (request is null) throw new ValidationException("Request body is required.");
-        var entity = Employee(id); var name = Required(request.FullName, "FullName", 160); var email = Email(request.Email);
+        if (request is null) throw new ValidationException("O corpo da requisição é obrigatório.");
+        var entity = Employee(id); var name = Required(request.FullName, "nome completo", 160); var email = Email(request.Email);
         CheckDepartment(request.DepartmentId);
         if (db.Employees.Any(x => x.OrganizationId == OrgId && x.Id != id && x.Email == email && x.Status != EmployeeStatus.Inactive))
-            throw new ConflictException("An active employee with this email already exists.");
+            throw new ConflictException("Já existe um colaborador ativo com esse e-mail.");
         var now = Now;
         try { entity.Update(request.DepartmentId, name, email, now); }
         catch (InvalidOperationException ex) { throw new ConflictException(ex.Message); }
-        Audit("Updated", "Employee", id, now); await db.SaveChangesAsync(ct); return Map(entity);
+        DefinirContato(entity, request);
+        Audit("Atualizado", "Colaborador", id, now); await db.SaveChangesAsync(ct); return Map(entity);
     }
     public async Task DeleteEmployeeAsync(Guid id, CancellationToken ct = default)
     {
@@ -85,17 +88,27 @@ public sealed partial class OrquestraService
         var custodyIds = db.Custodies.Where(c => c.OrganizationId == OrgId && c.EmployeeId == id).Select(c => c.Id);
         if (db.CustodyItems.Any(i => i.OrganizationId == OrgId && i.ReturnedAt == null &&
             custodyIds.Contains(i.CustodyId)))
-            throw new ConflictException("Employee has pending assets.");
+            throw new ConflictException("O colaborador ainda possui ativos pendentes.");
         var now = Now;
         try { entity.Deactivate(now); }
         catch (InvalidOperationException ex) { throw new ConflictException(ex.Message); }
-        Audit("Deactivated", "Employee", id, now); await db.SaveChangesAsync(ct);
+        Audit("Inativado", "Colaborador", id, now); await db.SaveChangesAsync(ct);
     }
     private void CheckDepartment(Guid? id)
     {
         if (id is null) return;
         if (!db.Departments.Any(x => x.OrganizationId == OrgId && x.Id == id && x.IsActive))
-            throw new ValidationException("Department does not exist or is inactive.");
+            throw new ValidationException("O departamento não existe ou está inativo.");
+    }
+
+    private static void DefinirContato(Employee colaborador, EmployeeWrite dados)
+    {
+        var cpf = dados.Cpf is null ? colaborador.Cpf : string.Concat(dados.Cpf.Where(char.IsAsciiDigit));
+        if (cpf?.Length == 0) cpf = null;
+        if (cpf is not null && cpf.Length != 11) throw new ValidationException("O CPF deve ter 11 dígitos.");
+        colaborador.DefinirContato(cpf,
+            dados.Cargo is null ? colaborador.Cargo : Optional(dados.Cargo, "cargo", 100),
+            dados.Telefone is null ? colaborador.Telefone : Optional(dados.Telefone, "telefone", 20));
     }
 
     public Task<PagedResult<CategoryDto>> GetCategoriesAsync(PageQuery query, CancellationToken ct = default)
@@ -108,23 +121,23 @@ public sealed partial class OrquestraService
     public Task<CategoryDto> GetCategoryAsync(Guid id, CancellationToken ct = default) => Task.FromResult(Map(Category(id)));
     public async Task<CategoryDto> CreateCategoryAsync(CategoryWrite request, CancellationToken ct = default)
     {
-        if (request is null) throw new ValidationException("Request body is required.");
-        var name = Required(request.Name, "Name", 120);
+        if (request is null) throw new ValidationException("O corpo da requisição é obrigatório.");
+        var name = Required(request.Name, "nome", 120);
         if (db.AssetCategories.Any(x => x.OrganizationId == OrgId && x.Name == name && x.IsActive))
-            throw new ConflictException("An active category with this name already exists.");
+            throw new ConflictException("Já existe uma categoria ativa com esse nome.");
         var now = Now; var entity = new AssetCategory(OrgId, name, now);
-        db.Add(entity); Audit("Created", "AssetCategory", entity.Id, now);
+        db.Add(entity); Audit("Criada", "CategoriaDeAtivo", entity.Id, now);
         await db.SaveChangesAsync(ct); return Map(entity);
     }
     public async Task<CategoryDto> UpdateCategoryAsync(Guid id, CategoryWrite request, CancellationToken ct = default)
     {
-        if (request is null) throw new ValidationException("Request body is required.");
+        if (request is null) throw new ValidationException("O corpo da requisição é obrigatório.");
         var entity = Category(id);
-        if (!entity.IsActive) throw new ConflictException("Category is inactive.");
-        var name = Required(request.Name, "Name", 120);
+        if (!entity.IsActive) throw new ConflictException("A categoria está inativa.");
+        var name = Required(request.Name, "nome", 120);
         if (db.AssetCategories.Any(x => x.OrganizationId == OrgId && x.Id != id && x.Name == name && x.IsActive))
-            throw new ConflictException("An active category with this name already exists.");
-        var now = Now; entity.Update(name, now); Audit("Updated", "AssetCategory", id, now);
+            throw new ConflictException("Já existe uma categoria ativa com esse nome.");
+        var now = Now; entity.Update(name, now); Audit("Atualizada", "CategoriaDeAtivo", id, now);
         await db.SaveChangesAsync(ct); return Map(entity);
     }
     public async Task DeleteCategoryAsync(Guid id, CancellationToken ct = default)
@@ -132,8 +145,8 @@ public sealed partial class OrquestraService
         var entity = Category(id);
         if (!entity.IsActive) return;
         if (db.Assets.Any(x => x.OrganizationId == OrgId && x.CategoryId == id && x.IsActive))
-            throw new ConflictException("Category has active assets.");
-        var now = Now; entity.Deactivate(now); Audit("Deactivated", "AssetCategory", id, now);
+            throw new ConflictException("A categoria possui ativos vinculados.");
+        var now = Now; entity.Deactivate(now); Audit("Inativada", "CategoriaDeAtivo", id, now);
         await db.SaveChangesAsync(ct);
     }
 }
