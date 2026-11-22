@@ -24,7 +24,7 @@ public sealed class ColaboradoresController(IOrquestraService service) : Control
         => Ok(await service.GetEmployeeAsync(id, ct));
 
     [HttpPost]
-    [Authorize(Policy = Policies.ManageRecords)]
+    [Authorize(Roles = Roles.Admin)]
     public async Task<IActionResult> Create([FromBody] EmployeeWrite request, CancellationToken ct)
     {
         var result = await service.CreateEmployeeAsync(request, ct);
@@ -32,12 +32,12 @@ public sealed class ColaboradoresController(IOrquestraService service) : Control
     }
 
     [HttpPut("{id:guid}")]
-    [Authorize(Policy = Policies.ManageRecords)]
+    [Authorize(Roles = Roles.Admin)]
     public async Task<IActionResult> Update(Guid id, [FromBody] EmployeeWrite request, CancellationToken ct)
         => Ok(await service.UpdateEmployeeAsync(id, request, ct));
 
     [HttpDelete("{id:guid}")]
-    [Authorize(Policy = Policies.ManageCritical)]
+    [Authorize(Roles = Roles.Admin)]
     public async Task<IActionResult> Delete(Guid id, CancellationToken ct)
     {
         await service.DeleteEmployeeAsync(id, ct);

@@ -22,7 +22,7 @@ public sealed class AutenticacaoController(IAuthService auth, ICurrentUser curre
     }
 
     [HttpGet("usuario-atual")]
-    [Authorize]
+    [Authorize(Policy = Policies.Sessao)]
     [ResponseCache(NoStore = true)]
     public async Task<IActionResult> Me(CancellationToken ct)
     {

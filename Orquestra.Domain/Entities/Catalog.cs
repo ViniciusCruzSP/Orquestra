@@ -33,6 +33,16 @@ public sealed class Employee
     public string FullName { get; private set; } = string.Empty;
     public string Email { get; private set; } = string.Empty;
     public EmployeeStatus Status { get; private set; }
+    public string? Cpf { get; private set; }
+    public string? Cargo { get; private set; }
+    public string? Telefone { get; private set; }
+
+    public void DefinirContato(string? cpf, string? cargo, string? telefone)
+    {
+        Cpf = cpf;
+        Cargo = cargo;
+        Telefone = telefone;
+    }
     public byte[] RowVersion { get; set; } = [];
     public DateTimeOffset CreatedAt { get; private set; }
     public DateTimeOffset UpdatedAt { get; private set; }

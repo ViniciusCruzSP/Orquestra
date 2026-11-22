@@ -16,7 +16,7 @@ public sealed class DatabaseBootstrapper(
     {
         await db.Database.MigrateAsync(cancellationToken);
 
-        foreach (var name in new[] { "Admin", "GestorTI", "OperadorTI", "Auditor" })
+        foreach (var name in new[] { "Admin", "GestorTI", "OperadorTI", "Auditor", "Colaborador" })
         {
             if (await roles.RoleExistsAsync(name)) continue;
             EnsureSuccess(await roles.CreateAsync(new IdentityRole(name)), "criar um perfil de acesso");

@@ -61,7 +61,8 @@ public sealed partial class OrquestraService(IOrquestraDb db, ICurrentUser curre
         if (id == Guid.Empty) throw new ValidationException($"O campo {field} é obrigatório.");
     }
     private static DepartmentDto Map(Department x) => new(x.Id, x.Name, x.IsActive, x.CreatedAt, x.UpdatedAt);
-    private static EmployeeDto Map(Employee x) => new(x.Id, x.DepartmentId, x.FullName, x.Email, x.Status, x.CreatedAt, x.UpdatedAt);
+    private EmployeeDto Map(Employee x) => new(x.Id, x.DepartmentId, x.FullName, x.Email, x.Status, x.CreatedAt, x.UpdatedAt,
+        currentUser.IsInRole("Admin") ? x.Cpf : null, x.Cargo, currentUser.IsInRole("Admin") ? x.Telefone : null);
     private static CategoryDto Map(AssetCategory x) => new(x.Id, x.Name, x.IsActive, x.CreatedAt, x.UpdatedAt);
     private static AssetDto Map(Asset x) => new(x.Id, x.CategoryId, x.AssetTag, x.Name, x.Brand, x.Model,
         x.SerialNumber, x.Notes, x.Status, x.IsActive, Convert.ToBase64String(x.RowVersion), x.CreatedAt, x.UpdatedAt,

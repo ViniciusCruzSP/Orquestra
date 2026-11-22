@@ -23,7 +23,7 @@ public record DepartmentDto(
 public record EmployeeWrite(
     [property: JsonPropertyName("departamentoId")] Guid? DepartmentId,
     [property: JsonPropertyName("nomeCompleto")] string FullName,
-    [property: JsonPropertyName("email")] string Email);
+    [property: JsonPropertyName("email")] string Email, string? Cpf = null, string? Cargo = null, string? Telefone = null);
 public record EmployeeDto(
     [property: JsonPropertyName("id")] Guid Id,
     [property: JsonPropertyName("departamentoId")] Guid? DepartmentId,
@@ -31,7 +31,8 @@ public record EmployeeDto(
     [property: JsonPropertyName("email")] string Email,
     [property: JsonPropertyName("situacao")] EmployeeStatus Status,
     [property: JsonPropertyName("criadoEm")] DateTimeOffset CreatedAt,
-    [property: JsonPropertyName("atualizadoEm")] DateTimeOffset UpdatedAt);
+    [property: JsonPropertyName("atualizadoEm")] DateTimeOffset UpdatedAt,
+    string? Cpf = null, string? Cargo = null, string? Telefone = null);
 
 public record CategoryWrite([property: JsonPropertyName("nome")] string Name);
 public record CategoryDto(

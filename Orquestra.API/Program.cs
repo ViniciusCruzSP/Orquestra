@@ -1,4 +1,5 @@
 using System.Globalization;
+using System.Threading.RateLimiting;
 using System.Text.Json.Serialization;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Mvc;
@@ -60,8 +61,19 @@ builder.Services.AddControllers(options =>
         new JsonStringEnumConverter(allowIntegerValues: false)));
 builder.Services.AddProblemDetails();
 builder.Services.AddExceptionHandler<ApiExceptionHandler>();
+builder.Services.AddRateLimiter(options =>
+{
+    options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+    options.AddPolicy("recuperacao", context => RateLimitPartition.GetFixedWindowLimiter(
+        context.Connection.RemoteIpAddress?.ToString() ?? "local",
+        _ => new FixedWindowRateLimiterOptions { PermitLimit = 8, Window = TimeSpan.FromMinutes(10) }));
+});
 
 builder.Services.AddAuthorizationBuilder()
+    .SetDefaultPolicy(new Microsoft.AspNetCore.Authorization.AuthorizationPolicyBuilder()
+        .RequireAuthenticatedUser().RequireRole(Roles.Admin, Roles.GestorTI, Roles.OperadorTI, Roles.Auditor).Build())
+    .AddPolicy(Policies.Sessao, policy => policy.RequireAuthenticatedUser())
+    .AddPolicy(Policies.Colaborador, policy => policy.RequireRole(Roles.Colaborador))
     .AddPolicy(Policies.ManageRecords, policy => policy.RequireRole(Roles.Admin, Roles.GestorTI, Roles.OperadorTI))
     .AddPolicy(Policies.ManageCritical, policy => policy.RequireRole(Roles.Admin, Roles.GestorTI))
     .AddPolicy(Policies.Audit, policy => policy.RequireRole(Roles.Admin, Roles.Auditor));
@@ -112,6 +124,7 @@ app.UseHttpsRedirection();
 app.UseCors("ConfiguredOrigins");
 app.UseAuthentication();
 app.UseAuthorization();
+app.UseRateLimiter();
 app.MapControllers();
 
 app.Run();

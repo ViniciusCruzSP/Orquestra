@@ -63,6 +63,7 @@ public sealed partial class OrquestraService
         if (db.Employees.Any(x => x.OrganizationId == OrgId && x.Email == email && x.Status != EmployeeStatus.Inactive))
             throw new ConflictException("Já existe um colaborador ativo com esse e-mail.");
         var now = Now; var entity = new Employee(OrgId, request.DepartmentId, name, email, now);
+        DefinirContato(entity, request);
         db.Add(entity); Audit("Criado", "Colaborador", entity.Id, now);
         await db.SaveChangesAsync(ct); return Map(entity);
     }
@@ -76,6 +77,7 @@ public sealed partial class OrquestraService
         var now = Now;
         try { entity.Update(request.DepartmentId, name, email, now); }
         catch (InvalidOperationException ex) { throw new ConflictException(ex.Message); }
+        DefinirContato(entity, request);
         Audit("Atualizado", "Colaborador", id, now); await db.SaveChangesAsync(ct); return Map(entity);
     }
     public async Task DeleteEmployeeAsync(Guid id, CancellationToken ct = default)
@@ -96,6 +98,16 @@ public sealed partial class OrquestraService
         if (id is null) return;
         if (!db.Departments.Any(x => x.OrganizationId == OrgId && x.Id == id && x.IsActive))
             throw new ValidationException("O departamento não existe ou está inativo.");
+    }
+
+    private static void DefinirContato(Employee colaborador, EmployeeWrite dados)
+    {
+        var cpf = dados.Cpf is null ? colaborador.Cpf : string.Concat(dados.Cpf.Where(char.IsAsciiDigit));
+        if (cpf?.Length == 0) cpf = null;
+        if (cpf is not null && cpf.Length != 11) throw new ValidationException("O CPF deve ter 11 dígitos.");
+        colaborador.DefinirContato(cpf,
+            dados.Cargo is null ? colaborador.Cargo : Optional(dados.Cargo, "cargo", 100),
+            dados.Telefone is null ? colaborador.Telefone : Optional(dados.Telefone, "telefone", 20));
     }
 
     public Task<PagedResult<CategoryDto>> GetCategoriesAsync(PageQuery query, CancellationToken ct = default)

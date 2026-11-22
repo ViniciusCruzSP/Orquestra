@@ -50,12 +50,16 @@ public static class DependencyInjection
         })
         .AddErrorDescriber<PortugueseIdentityErrorDescriber>()
         .AddRoles<IdentityRole>()
+        .AddDefaultTokenProviders()
         .AddEntityFrameworkStores<OrquestraDbContext>();
+
+        services.Configure<DataProtectionTokenProviderOptions>(options => options.TokenLifespan = TimeSpan.FromMinutes(30));
 
         services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             .AddJwtBearer(options =>
             {
                 options.MapInboundClaims = false;
+                options.Events = new JwtBearerEvents { OnTokenValidated = ContaValida.ValidarToken };
                 options.TokenValidationParameters = new TokenValidationParameters
                 {
                     ValidateIssuer = true,

@@ -4,13 +4,13 @@ O Orquestra nasceu de um problema comum nas empresas: depois de algum tempo, nin
 
 A proposta do projeto é reunir esse controle em um só lugar. O sistema registra o inventário de ativos de TI, as entregas e devoluções, as manutenções, os defeitos e os descartes. Também acompanha o desligamento de colaboradores para evitar que um processo seja encerrado enquanto ainda existirem equipamentos pendentes.
 
-Este repositório reúne a aplicação web em React e a API em ASP.NET Core. Toda a experiência apresentada ao usuário, inclusive os contratos e as mensagens da API, está em português.
+Este é o repositório da API em ASP.NET Core. A interface em Next.js fica no repositório `orquestra-web` e usa as rotas em português. A pasta `orquestra.web` contém a página Vite original.
 
 ## O que já funciona
 
 A API já possui autenticação com JWT, separação dos dados por organização e controle de acesso por perfil. É possível cadastrar departamentos, colaboradores, categorias e ativos; entregar vários ativos em uma única custódia; registrar devoluções; controlar manutenção, defeito e descarte; acompanhar desligamentos; consultar indicadores e revisar o histórico de auditoria.
 
-O frontend já conta com a identidade visual e a apresentação do Orquestra. As telas operacionais e a integração com a API serão construídas nas próximas etapas do projeto.
+O frontend em Next.js consome a API para autenticação, cadastros, inventário, custódias, desligamentos e relatórios. Rode os dois projetos em terminais separados.
 
 ## Organização do código
 
@@ -29,7 +29,6 @@ A separação ajuda a manter as regras do Orquestra independentes da interface e
 Para executar o projeto localmente, você precisa ter:
 
 - .NET SDK 10;
-- Node.js 22 ou mais recente;
 - SQL Server LocalDB, SQL Server Express ou outra instância compatível;
 - `dotnet-ef` 10.0.12, caso queira aplicar as migrations manualmente.
 
@@ -47,7 +46,10 @@ Os dados sensíveis ficam no *User Secrets* e não são enviados ao Git. Na raiz
 dotnet user-secrets set --project Orquestra.API "ConnectionStrings:Orquestra" "Server=(localdb)\MSSQLLocalDB;Database=OrquestraDev;Trusted_Connection=True;TrustServerCertificate=True"
 dotnet user-secrets set --project Orquestra.API "Jwt:Issuer" "Orquestra.Local"
 dotnet user-secrets set --project Orquestra.API "Jwt:Audience" "Orquestra.Local"
-$chaveJwt = [Convert]::ToBase64String([Security.Cryptography.RandomNumberGenerator]::GetBytes(48))
+$bytes = New-Object byte[] 48
+$gerador = [Security.Cryptography.RandomNumberGenerator]::Create()
+try { $gerador.GetBytes($bytes) } finally { $gerador.Dispose() }
+$chaveJwt = [Convert]::ToBase64String($bytes)
 dotnet user-secrets set --project Orquestra.API "Jwt:Key" $chaveJwt
 ```
 
@@ -69,12 +71,6 @@ dotnet user-secrets remove --project Orquestra.API "Bootstrap:OrganizationSlug"
 dotnet user-secrets remove --project Orquestra.API "Bootstrap:OrganizationName"
 ```
 
-Para permitir que o frontend local acesse a API:
-
-```powershell
-dotnet user-secrets set --project Orquestra.API "Cors:AllowedOrigins:0" "http://localhost:5173"
-```
-
 ## Executando o projeto
 
 Restaure as dependências, prepare o banco e inicie a API:
@@ -90,15 +86,7 @@ dotnet run --project Orquestra.API --launch-profile https
 
 O Swagger ficará disponível em `https://localhost:7281/swagger`.
 
-Em outro terminal, inicie a aplicação web:
-
-```powershell
-cd orquestra.web
-npm install
-npm run dev
-```
-
-A página poderá ser acessada em `http://localhost:5173`.
+Para usar a interface, siga o README do repositório Next.js. O servidor Next.js se comunica com a API sem depender de CORS. Em desenvolvimento, o perfil `http` usa apenas a porta local 5243. Em homologação e produção configure HTTPS.
 
 Se o navegador não confiar no certificado local da API, execute uma vez:
 
@@ -153,4 +141,10 @@ A atualização de um ativo usa o campo `versaoDoRegistro` para evitar que duas 
 - **Operador de TI:** realiza os cadastros e as movimentações do dia a dia;
 - **Auditor:** consulta os registros de auditoria.
 
-O cadastro de novos usuários e a distribuição desses perfis ainda serão adicionados. Por enquanto, o administrador inicial é criado pela configuração de bootstrap.
+O perfil **Colaborador** consulta apenas suas próprias entregas, devoluções e termos. O administrador inicial é criado pela configuração de bootstrap. Na edição de um colaborador ativo, o administrador pode criar a conta vinculada e definir o perfil. O e-mail de acesso é o usado na criação da conta e aparece na seção Conta de acesso.
+
+## Recuperação de senha
+
+Configure `Email:Servidor`, `Email:Porta`, `Email:Remetente` e `Email:UrlFrontend` (por exemplo, `http://localhost:3000` no desenvolvimento). Se o servidor SMTP exigir autenticação, inclua `Email:Usuario` e `Email:Senha` nos segredos do ambiente. O SMTP deve oferecer STARTTLS. O endereço externo do frontend deve usar HTTPS. Em produção com mais de uma instância, compartilhe as chaves do ASP.NET Core Data Protection entre as instâncias.
+
+`Jwt:DuracaoMinutos` define a validade do JWT (60 minutos por padrão). Sessões emitidas antes da alteração de perfil, redefinição de senha ou inativação deixam de ser aceitas.

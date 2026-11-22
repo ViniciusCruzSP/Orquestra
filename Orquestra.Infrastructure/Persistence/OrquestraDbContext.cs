@@ -37,6 +37,10 @@ public sealed class OrquestraDbContext(
             b.Property(x => x.OrganizationId).IsRequired();
             b.Property(x => x.CreatedAt).IsRequired();
             b.HasIndex(x => new { x.OrganizationId, x.Id });
+            b.HasIndex(x => new { x.OrganizationId, x.ColaboradorId }).IsUnique()
+                .HasFilter("[ColaboradorId] IS NOT NULL");
+            b.HasOne<Employee>().WithMany().HasForeignKey(x => new { x.OrganizationId, x.ColaboradorId })
+                .HasPrincipalKey(x => new { x.OrganizationId, x.Id }).OnDelete(DeleteBehavior.Restrict);
             b.HasOne<Organization>().WithMany().HasForeignKey(x => x.OrganizationId)
                 .OnDelete(DeleteBehavior.Restrict);
         });
@@ -63,6 +67,10 @@ public sealed class OrquestraDbContext(
         modelBuilder.Entity<Employee>(b =>
         {
             b.Property(x => x.FullName).HasMaxLength(200).IsRequired();
+            b.Property(x => x.Cpf).HasMaxLength(11);
+            b.Property(x => x.Cargo).HasMaxLength(100);
+            b.Property(x => x.Telefone).HasMaxLength(20);
+            b.HasIndex(x => new { x.OrganizationId, x.Cpf }).IsUnique().HasFilter("[Cpf] IS NOT NULL");
             b.Property(x => x.Email).HasMaxLength(256).IsRequired();
             b.Property(x => x.Status).HasConversion<string>().HasMaxLength(24);
             b.Property(x => x.RowVersion).IsRowVersion();
