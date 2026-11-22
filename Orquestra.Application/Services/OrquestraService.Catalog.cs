@@ -52,6 +52,7 @@ public sealed partial class OrquestraService
         var source = db.Employees.Where(x => x.OrganizationId == OrgId);
         if (query.Search is not null) source = source.Where(x => x.FullName.Contains(query.Search) || x.Email.Contains(query.Search));
         if (query.EmployeeStatus is not null) source = source.Where(x => x.Status == query.EmployeeStatus);
+        if (query.DepartamentoId is not null) source = source.Where(x => x.DepartmentId == query.DepartamentoId);
         return Task.FromResult(Page(source.OrderBy(x => x.FullName).ThenBy(x => x.Id), query, Map));
     }
     public Task<EmployeeDto> GetEmployeeAsync(Guid id, CancellationToken ct = default) => Task.FromResult(Map(Employee(id)));

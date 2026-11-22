@@ -16,8 +16,10 @@ public sealed class ColaboradoresController(IOrquestraService service) : Control
         [FromQuery(Name = "itensPorPagina")] int pageSize = 20,
         [FromQuery(Name = "busca")] string? search = null,
         [FromQuery(Name = "situacao")] EmployeeStatus? employeeStatus = null,
+        [FromQuery] Guid? departamentoId = null,
         CancellationToken ct = default)
-        => Ok(await service.GetEmployeesAsync(new PageQuery(page, pageSize, search, EmployeeStatus: employeeStatus), ct));
+        => Ok(await service.GetEmployeesAsync(new PageQuery(page, pageSize, search, EmployeeStatus: employeeStatus,
+            DepartamentoId: departamentoId), ct));
 
     [HttpGet("{id:guid}")]
     public async Task<IActionResult> Get(Guid id, CancellationToken ct)

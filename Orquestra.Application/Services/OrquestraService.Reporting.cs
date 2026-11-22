@@ -15,6 +15,8 @@ public sealed partial class OrquestraService
             ativos = ativos.Where(x => x.AssetTag.Contains(query.Search) || x.Name.Contains(query.Search));
         var movimentos = db.AssetMovements.Where(x => x.OrganizationId == OrgId);
         if (query.AssetStatus is not null) movimentos = movimentos.Where(x => x.NewStatus == query.AssetStatus);
+        if (query.Operacao is not null) movimentos = movimentos.Where(x => x.Type == query.Operacao);
+        if (!string.IsNullOrWhiteSpace(query.UsuarioId)) movimentos = movimentos.Where(x => x.PerformedByUserId == query.UsuarioId);
         if (query.De is { } de)
         {
             var inicio = new DateTimeOffset(de.ToDateTime(TimeOnly.MinValue), TimeSpan.Zero);

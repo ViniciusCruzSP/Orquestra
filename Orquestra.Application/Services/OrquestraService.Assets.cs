@@ -63,9 +63,16 @@ public sealed partial class OrquestraService
         var asset = new Asset(OrgId, request.CategoryId, data.Tag, data.Name, data.Brand, data.Model,
             data.Serial, data.Notes, now);
         AplicarEspecificacoes(asset, request.Especificacoes);
+        switch (request.SituacaoInicial)
+        {
+            case null or AssetStatus.Available: break;
+            case AssetStatus.Maintenance: asset.StartMaintenance(now); break;
+            case AssetStatus.Defective: asset.MarkDefective(now); break;
+            default: throw new ValidationException("O estado inicial deve ser em estoque, em manutenção ou com defeito.");
+        }
         db.Add(asset);
         db.Add(new AssetMovement(OrgId, asset.Id, null, MovementType.Registered, AssetStatus.Available,
-            AssetStatus.Available, UserId, null, now));
+            asset.Status, UserId, null, now));
         Audit("Cadastrado", "Ativo", asset.Id, now);
         await db.SaveChangesAsync(ct); return Map(asset);
     }

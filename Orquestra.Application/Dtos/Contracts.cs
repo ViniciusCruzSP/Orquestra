@@ -5,7 +5,8 @@ namespace Orquestra.Application.Dtos;
 
 public record PageQuery(int Page = 1, int PageSize = 20, string? Search = null,
     AssetStatus? AssetStatus = null, EmployeeStatus? EmployeeStatus = null, string? Tipo = null,
-    Guid? ResponsavelId = null, DateOnly? De = null, DateOnly? Ate = null, bool? Ativo = null);
+    Guid? ResponsavelId = null, DateOnly? De = null, DateOnly? Ate = null, bool? Ativo = null,
+    Guid? DepartamentoId = null, MovementType? Operacao = null, string? UsuarioId = null);
 public record PagedResult<T>(
     [property: JsonPropertyName("itens")] IReadOnlyList<T> Items,
     [property: JsonPropertyName("total")] int Total,
@@ -50,7 +51,8 @@ public record AssetWrite(
     [property: JsonPropertyName("modelo")] string Model,
     [property: JsonPropertyName("numeroDeSerie")] string? SerialNumber,
     [property: JsonPropertyName("observacoes")] string? Notes,
-    [property: JsonPropertyName("versaoDoRegistro")] string? RowVersion = null, EspecificacoesAtivo? Especificacoes = null);
+    [property: JsonPropertyName("versaoDoRegistro")] string? RowVersion = null, EspecificacoesAtivo? Especificacoes = null,
+    AssetStatus? SituacaoInicial = null);
 public record EspecificacoesAtivo(string Tipo, DateOnly? AdquiridoEm, string? Processador,
     string? MemoriaRam, string? Armazenamento, string? SistemaOperacional, string? TipoPeriferico);
 public record AssetDto(

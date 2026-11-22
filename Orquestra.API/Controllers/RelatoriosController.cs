@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Orquestra.Application.Dtos;
+using Orquestra.Application.Errors;
 using Orquestra.Application.Services;
 using Orquestra.Domain.Enums;
 
@@ -14,6 +15,12 @@ public sealed class RelatoriosController(IOrquestraService service) : Controller
     [HttpGet("historico")]
     public ActionResult<PagedResult<MovimentoInventario>> Historico([FromQuery] string? busca = null,
         [FromQuery] AssetStatus? situacao = null, [FromQuery] DateOnly? de = null, [FromQuery] DateOnly? ate = null,
-        [FromQuery] int pagina = 1, [FromQuery] int itensPorPagina = 20)
-        => service.HistoricoInventario(new PageQuery(pagina, itensPorPagina, busca, AssetStatus: situacao, De: de, Ate: ate));
+        [FromQuery] int pagina = 1, [FromQuery] int itensPorPagina = 20,
+        [FromQuery] int? operacao = null, [FromQuery] string? usuarioId = null)
+    {
+        if (operacao is { } tipo && !Enum.IsDefined((MovementType)tipo))
+            throw new ValidationException("Tipo de movimentação inválido.");
+        return service.HistoricoInventario(new PageQuery(pagina, itensPorPagina, busca, AssetStatus: situacao, De: de, Ate: ate,
+            Operacao: (MovementType?)operacao, UsuarioId: usuarioId));
+    }
 }
