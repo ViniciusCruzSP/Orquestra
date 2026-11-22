@@ -1,12 +1,9 @@
-Este arquivo explica como Visual Studio criou o projeto.
+# Histórico do frontend
 
-As seguintes ferramentas foram usadas para gerar este projeto:
-- create-vite
+## Estrutura inicial
 
-As etapas a seguir foram usadas para gerar este projeto:
-- Crie um projeto react com create-vite: `npm init --yes vite@latest orquestra.web -- --template=react-ts  --no-rolldown --no-immediate`.
-- Atualizando `vite.config.ts`com a porta.
-- Criar o arquivo de projeto (`orquestra.web.esproj`).
-- Crie `launch.json` para habilitar a depuração.
-- Adicionar projeto à solução.
-- Grave este arquivo.
+O projeto web foi criado com React, TypeScript e Vite e adicionado à solução do Visual Studio. A configuração inicial também definiu a porta de desenvolvimento e os arquivos necessários para executar e depurar a aplicação.
+
+## Interface em português
+
+A página padrão do Vite foi substituída pela apresentação do Orquestra. Textos, navegação, metadados e elementos de acessibilidade passaram a usar português do Brasil.
