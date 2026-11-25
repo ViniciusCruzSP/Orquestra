@@ -1,4 +1,5 @@
 <Solution>
+  <Project Path="Orquestra.Testes/Orquestra.Testes.csproj" />
   <Folder Name="/src/">
     <Project Path="Orquestra.API/Orquestra.API.csproj" />
     <Project Path="Orquestra.Application/Orquestra.Application.csproj" />

@@ -17,5 +17,6 @@ jobs:
           dotnet-version: '10.0.x'
       - run: dotnet restore Orquestra.slnx
       - run: dotnet build Orquestra.slnx --no-restore --configuration Release
+      - run: dotnet test Orquestra.Testes/Orquestra.Testes.csproj --no-build --configuration Release
       - run: dotnet tool install --tool-path ./.ferramentas dotnet-ef --version 10.0.12
       - run: ./.ferramentas/dotnet-ef migrations has-pending-model-changes --project Orquestra.Infrastructure --startup-project Orquestra.Infrastructure --configuration Release --no-build
