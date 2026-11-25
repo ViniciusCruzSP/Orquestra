@@ -33,7 +33,9 @@ internal sealed class GeradorTermoPdf : IGeradorTermo
                     coluna.Item().Text($"CPF: {dados.CpfMascarado}");
                 if (dados.Cargo is not null)
                     coluna.Item().Text($"Cargo: {dados.Cargo}");
-                coluna.Item().Text($"Entrega: {dados.EntregueEm.ToString("dd/MM/yyyy HH:mm 'UTC'zzz", CultureInfo.InvariantCulture)}");
+                var horarioBrasilia = TimeZoneInfo.ConvertTime(dados.EntregueEm,
+                    TimeZoneInfo.FindSystemTimeZoneById("America/Sao_Paulo"));
+                coluna.Item().Text($"Entrega: {horarioBrasilia.ToString("dd/MM/yyyy HH:mm 'UTC'zzz", CultureInfo.InvariantCulture)} (horário de Brasília)");
                 coluna.Item().Table(tabela =>
                 {
                     tabela.ColumnsDefinition(c => { c.RelativeColumn(1); c.RelativeColumn(3); });
