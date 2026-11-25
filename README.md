@@ -149,8 +149,22 @@ Configure `Email:Servidor`, `Email:Porta`, `Email:Remetente` e `Email:UrlFronten
 
 `Jwt:DuracaoMinutos` define a validade do JWT (60 minutos por padrão). Sessões emitidas antes da alteração de perfil, redefinição de senha ou inativação deixam de ser aceitas.
 
+## Testes automatizados
+
+O projeto `Orquestra.Testes` fica na solução e aparece no **Gerenciador de Testes** do Visual Studio. Pela linha de comando, rode `dotnet test Orquestra.slnx` na raiz para executar os testes unitários.
+
+Para incluir os testes de integração, use o SQL Server LocalDB no Windows:
+
+```powershell
+sqllocaldb start MSSQLLocalDB
+$env:ORQUESTRA_TESTES_SQL = 'Server=(localdb)\MSSQLLocalDB;Integrated Security=True;TrustServerCertificate=True'
+dotnet test Orquestra.slnx
+```
+
+Os testes de integração usam a API real, aplicam as migrações em um banco com nome exclusivo e removem esse banco no fim da execução. Use uma instância de teste com permissão para criar bancos. A suíte usa contas fictícias e inclui cadastro e edição, permissões, inventário, entregas, devoluções, termos em PDF, desligamento e erros de recuperação de senha. A entrega de e-mail por SMTP deve ser validada em homologação.
+
 ## Homologação
 
-O GitHub Actions compila a API e valida se o modelo coincide com as migrações. Antes de colocar o sistema em uso, teste o fluxo completo em um banco SQL Server de homologação: novos cadastros, entrega, PDF, devolução, desligamento, isolamento entre organizações e recuperação por SMTP.
+O GitHub Actions compila a API, roda os testes unitários e valida se o modelo coincide com as migrações. Antes de colocar o sistema em uso, rode também a suíte de integração e valide o fluxo completo no ambiente de homologação.
 
 Em produção, configure HTTPS e monitore o tempo de resposta e a disponibilidade. A meta do projeto é responder em até 3 segundos nas condições normais de uso e manter 99,5% de disponibilidade entre 07h e 20h em dias úteis. Agende backup diário do SQL Server com retenção de 30 dias e teste a restauração. Essas metas e rotinas dependem da infraestrutura escolhida e ainda precisam ser validadas no ambiente de destino.
