@@ -23,13 +23,25 @@ public sealed class MinhaAreaController(UserManager<ApplicationUser> usuarios, O
     {
         if (pagina is < 1 or > 100000) throw new ValidationException("Página inválida.");
         var pessoa = await Colaborador();
-        return await db.Set<Custody>().Where(x => x.OrganizationId == sessao.OrganizationId && x.EmployeeId == pessoa)
+        var organizacao = sessao.OrganizationId;
+        var custodias = await db.Set<Custody>().Where(x => x.OrganizationId == organizacao && x.EmployeeId == pessoa)
             .OrderByDescending(x => x.DeliveredAt).ThenBy(x => x.Id).Skip((pagina - 1) * 20).Take(20)
-            .Select(x => new CustodiaPessoal(x.Id, x.DeliveredAt,
-                db.Set<CustodyItem>().Where(i => i.OrganizationId == x.OrganizationId && i.CustodyId == x.Id)
-                    .Join(db.Set<Asset>(), i => i.AssetId, a => a.Id,
-                        (i, a) => new ItemPessoal(a.Id, a.AssetTag, a.Name, i.ReturnedAt))
-                    .OrderBy(i => i.Patrimonio).ToList())).ToListAsync(ct);
+            .Select(x => new { x.Id, x.DeliveredAt })
+            .ToListAsync(ct);
+        if (custodias.Count == 0) return [];
+
+        var ids = custodias.Select(x => x.Id).ToArray();
+        var itens = await (from item in db.Set<CustodyItem>()
+                           join ativo in db.Set<Asset>()
+                               on new { item.OrganizationId, Id = item.AssetId } equals new { ativo.OrganizationId, ativo.Id }
+                           where item.OrganizationId == organizacao && ids.Contains(item.CustodyId)
+                           orderby ativo.AssetTag, item.Id
+                           select new { item.CustodyId, ativo.Id, ativo.AssetTag, ativo.Name, item.ReturnedAt })
+            .ToListAsync(ct);
+        var porCustodia = itens.ToLookup(x => x.CustodyId,
+            x => new ItemPessoal(x.Id, x.AssetTag, x.Name, x.ReturnedAt));
+
+        return custodias.Select(x => new CustodiaPessoal(x.Id, x.DeliveredAt, porCustodia[x.Id].ToList())).ToArray();
     }
 
     [HttpGet("custodias/{id:guid}/termo")]

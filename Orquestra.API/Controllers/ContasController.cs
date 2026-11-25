@@ -19,10 +19,15 @@ public sealed class ContasController(UserManager<ApplicationUser> usuarios, Orqu
     ICurrentUser sessao) : ControllerBase
 {
     [HttpGet("{colaboradorId:guid}")]
-    public async Task<ContaDto> Consultar(Guid colaboradorId, CancellationToken ct)
+    public async Task<ActionResult<ContaDto>> Consultar(Guid colaboradorId, CancellationToken ct)
     {
-        var conta = await Encontrar(colaboradorId, ct) ?? throw new NotFoundException("O colaborador ainda não tem conta.");
-        return new(conta.Email!, (await usuarios.GetRolesAsync(conta)).Single());
+        if (!await db.Set<Employee>().AnyAsync(x => x.Id == colaboradorId && x.OrganizationId == sessao.OrganizationId, ct))
+            throw new NotFoundException("Colaborador não encontrado.");
+
+        var conta = await Encontrar(colaboradorId, ct);
+        if (conta is null) return NoContent();
+
+        return new ContaDto(conta.Email!, (await usuarios.GetRolesAsync(conta)).Single());
     }
 
     [HttpPut("{colaboradorId:guid}")]
